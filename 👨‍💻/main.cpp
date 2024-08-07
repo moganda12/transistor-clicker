@@ -58,7 +58,7 @@ struct TclickerSave {
 TclickerSave save = {0, 0, 0, 0, 0, 0, 0, 0};
 
 const str name = "Transistor Clicker";
-const str version = "0.0.1 DevBuild 4.2_2";
+const str version = "0.0.1_1";
 
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABprice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = 0.1, mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
@@ -338,8 +338,67 @@ void buy(std::vector<str>& args) {
 	}
 }
 
+void help(std::vector<str>& args) {
+	if(args.size() < 1) {
+		std::cout << BOLDBLUE << "Commands:\n";
+		std::cout << BOLDBLUE << "balance " << RESET << " - Shows info about your transistor balance\n";
+		std::cout << BOLDBLUE << "buy " << RESET << " - Buys the selected item\n";
+		std::cout << BOLDBLUE << "clear " << RESET << " - Clears the console\n";
+		std::cout << BOLDBLUE << "help " << RESET << " - Gives assistance\n";
+	} else if(args.size() >= 1) {
+		if(args[0] == "balance") {
+			if(args.size() == 1) {
+			std::cout << BOLDWHITE << "BALANCE\n";
+			std::cout << RESET << "Show numbers-related info about specified thing\n";
+			std::cout << BOLDCYAN << "\nUsage:\n";
+			std::cout << RESET << "balance [thing]\n";
+			std::cout << BOLDCYAN << "\nThings:\n";
+			std::cout << BOLDBLUE << "defualt" << RESET << " - transistor\n";
+			std::cout << BOLDCYAN << "Subcommands:\n";
+			std::cout << BOLDBLUE << "building" << RESET << " - Shows numbers-related info about a building\n";
+			} else if(args.size() == 2) {
+				if(args[1] == "building") {
+					std::cout << BOLDWHITE << "BALANCE BUILDING\n";
+					std::cout << RESET << "Show numbers-related info about a building\n";
+					std::cout << BOLDCYAN << "\nUsage:\n";
+					std::cout << RESET << "balance building [building]\n";
+					std::cout << BOLDCYAN << "\nThings:\n";
+					std::cout << BOLDBLUE << "cursor" << RESET << " - show cursor count, TPS and price for next cursor\n";
+					std::cout << BOLDBLUE << "moss" << RESET << " - show moss count, TPS and price for next moss\n";
+					std::cout << BOLDBLUE << "smallFAB" << RESET << " - show small FAB count, TPS and price for next small FAB\n";
+					std::cout << BOLDBLUE << "mediumFAB" << RESET << " - show medium FAB count, TPS and price for next medium FAB\n";
+					std::cout << BOLDBLUE << "largeFAB" << RESET << " - show large FAB count, TPS and price for next large FAB\n";
+				}
+			}
+		} else if(args[0] == "buy") {
+			{
+			std::cout << BOLDWHITE << "BUY\n";
+			std::cout << RESET << "Buy the specified item, if count is empty it will buy 1, if count is max it will buy the maximum ammount\n";
+			std::cout << BOLDCYAN << "\nUsage:\n";
+			std::cout << RESET << "buy [item] [count]\n";
+			std::cout << BOLDCYAN << "\nThings:\n";
+			std::cout << BOLDBLUE << "cursor" << RESET << " - buy a cursor\n";
+			std::cout << BOLDBLUE << "moss" << RESET << " - buy some moss\n";
+			std::cout << BOLDBLUE << "smallFAB" << RESET << " - buy a small FAB\n";
+			std::cout << BOLDBLUE << "mediumFAB" << RESET << " - buy a medium FAB\n";
+			std::cout << BOLDBLUE << "largeFAB" << RESET << " - buy a large FAB\n";
+			}
+		} else if(args[0] == "clear") {
+			std::cout << BOLDWHITE << "CLEAR\n";
+			std::cout << RESET << "Clears the console, then prints title card\n";
+			std::cout << BOLDCYAN << "\nUsage:\n";
+			std::cout << RESET << "clear\n";
+		} else if(args[0] == "help") {
+			std::cout << BOLDWHITE << "HELP\n";
+			std::cout << RESET << "Shows help for commands, if none is specified then gives help on all commands\n";
+			std::cout << BOLDCYAN << "\nUsage:\n";
+			std::cout << RESET << "help [command]\n";
+		}
+	}
+}
+
 int main() {
-	std::jthread gameThread = CMD::init(name, GREEN + str("@HCC") + BOLDBLUE + " ~/You" + RESET + "$ ", onTick);
+	std::jthread gameThread = CMD::init(name, BOLDGREEN + str("@HCC") + BOLDBLUE + " ~/You" + RESET + "$ ", onTick);
 
 	CMD::exit = onExit;
 
@@ -351,8 +410,9 @@ int main() {
 	}*/
 
 	CMD::addcommand("balance", balance);
-	CMD::addcommand("clear",  clear);
 	CMD::addcommand("buy", buy);
+	CMD::addcommand("clear",  clear);
+	CMD::addcommand("help", help);
 
 	CMD::log("Program iniitialized");
 
