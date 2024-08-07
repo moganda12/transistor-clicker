@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "./lib/CMD.hpp"
+#include "./lib/GRP.hpp"
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[30m"      /* Black */
@@ -58,7 +59,7 @@ struct TclickerSave {
 TclickerSave save = {0, 0, 0, 0, 0, 0, 0, 0};
 
 const str name = "Transistor Clicker";
-const str version = "0.0.1_1";
+const str version = "0.0.1_2";
 
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABprice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = 0.1, mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
@@ -97,13 +98,11 @@ void clear(std::vector<str>&) {
 	printTitileCard();
 }
 
-str TransitorsString(number transistors, str colA = BOLDGREEN, str colB = BOLDBLUE, integer precision = 1) {
+str TransitorsString(number transistors, bool round = true, str colA = BOLDGREEN, str colB = BOLDBLUE) {
 	std::stringstream ss;
-	integer transistorsInt = toInt(transistors*precision);
-
-	number finalTransistors = number(transistorsInt, precision);
-	str plural = finalTransistors == 1 ? "transistor" : "transistors";
-	ss << colA << finalTransistors << ' ' << colB << plural;
+	if(round) transistors = GRP::round(transistors);
+	str plural = GRP::round(transistors * 10) / 10 == 1 ? "transistor" : "transistors";
+	ss << colA << GRP::toString(transistors) << ' ' << colB << plural;
 	return ss.str();
 }
 
@@ -234,7 +233,7 @@ void balance(std::vector<str>& args) {
 	}
 	std::cout << BOLDBLUE << "You have " << TransitorsString(save.transistorBalance) << ".\n";
 	std::cout << BOLDBLUE << "You have made " << TransitorsString(save.totalTransistors) << " in total.\n";
-	std::cout << BOLDBLUE << "You make " << TransitorsString(calcTPS(), BOLDGREEN, BOLDBLUE, 10) << " per second.\n";
+	std::cout << BOLDBLUE << "You make " << TransitorsString(calcTPS(), false) << " per second.\n";
 
 	CMD::log("They have" + TransitorsString(save.transistorBalance, "", "") + "!");
 }
@@ -398,6 +397,8 @@ void help(std::vector<str>& args) {
 }
 
 int main() {
+	GRP::init();
+	
 	std::jthread gameThread = CMD::init(name, BOLDGREEN + str("@HCC") + BOLDBLUE + " ~/You" + RESET + "$ ", onTick);
 
 	CMD::exit = onExit;

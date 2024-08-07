@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [0.0.1_2] 2024-08-07
+
+### fixed
+
+- number display
 
 ## [0.0.1_1] 2024-08-06
 
