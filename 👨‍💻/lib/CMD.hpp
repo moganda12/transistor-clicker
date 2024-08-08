@@ -20,8 +20,8 @@ namespace CMD {
     typedef void (*UpdateFunction)(void);
     using Onzero = UpdateFunction;
 
-    typedef bool (*Condition)(std::vector<str>);
-    typedef void (*Result)(std::vector<str>);
+    typedef bool (*Condition)(std::vector<str>&);
+    typedef void (*Result)(std::vector<str>&);
 
     str name = "CMD:\\";
 

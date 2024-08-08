@@ -49,14 +49,24 @@ enum Buildings {
 struct TclickerSave {
 	number transistorBalance;
 	number totalTransistors;
-	/*number ascentionLevels;
+	/*integer ascensionCount;
+	number ascentionLevels;
 	number heavenlyMicrochips;*/
 	integer clicks; 
-    integer cusors, moss, smallFABs, mediumFABs, largeFABs; 
+    integer cusors, moss, smallFABs, mediumFABs, largeFABs;
 	//integer i860s, startups, oakTrees;
+    bool cursorUnlocked, mossUnlocked, smallFABUnlocked, mediumFABUnlocked, largeFABUnlocked;
+    //bool i860Unlocked, startupUnlocked, oakTreeUnlocked;
 };
 
-TclickerSave save = {0, 0, 0, 0, 0, 0, 0, 0};
+struct Trigger {
+    CMD::Condition condition;
+    CMD::Result result;
+};
+
+std::vector<Trigger> triggers;
+
+TclickerSave save = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
 
 const str name = "Transistor Clicker";
 const str version = "0.0.1_2";
@@ -85,6 +95,18 @@ number pow(number base, integer exponent) {
 	return result;
 }
 
+void addTrigger(Trigger trigger) {
+	triggers.push_back(trigger);
+}
+
+void testTriggers(std::vector<str> args) {
+	for(Trigger trigger : triggers) {
+		if(trigger.condition(args)) {
+			trigger.result(args);
+		}
+	}
+}
+
 number expandPrice(number price, integer count) {
 	return price * pow(expantionFactor, count);
 }
@@ -98,12 +120,54 @@ void clear(std::vector<str>&) {
 	printTitileCard();
 }
 
+str numString(number x, str thing, str plural = "s", bool round = true, str colA = BOLDGREEN, str colB = BOLDBLUE) {}
+
 str TransitorsString(number transistors, bool round = true, str colA = BOLDGREEN, str colB = BOLDBLUE) {
 	std::stringstream ss;
 	if(round) transistors = GRP::round(transistors);
 	str plural = GRP::round(transistors * 10) / 10 == 1 ? "transistor" : "transistors";
 	ss << colA << GRP::toString(transistors) << ' ' << colB << plural;
 	return ss.str();
+}
+
+void unlockCursor(std::vector<str>& args) {
+	save.cursorUnlocked = true;
+}
+
+void unlockMoss(std::vector<str>& args) {
+	save.mossUnlocked = true;
+}
+
+void unlockSmallFAB(std::vector<str>& args) {
+	save.smallFABUnlocked = true;
+}
+
+void unlockMediumFAB(std::vector<str>& args) {
+	save.mediumFABUnlocked = true;
+}
+
+void unlockLargeFAB(std::vector<str>& args) {
+	save.largeFABUnlocked = true;
+}
+
+bool isCursorUnLocked(std::vector<str>& args) {
+	return save.totalTransistors > cursorPrice;
+}
+
+bool isMossUnLocked(std::vector<str>& args) {
+	return save.totalTransistors > mossPrice;
+}
+
+bool isSmallFABUnLocked(std::vector<str>& args) {
+	return save.totalTransistors > smallFABPrice;
+}
+
+bool isMediumFABUnLocked(std::vector<str>& args) {
+	return save.totalTransistors > mediumFABprice;
+}
+
+bool isLargeFABUnLocked(std::vector<str>& args) {
+	return save.totalTransistors > largeFABPrice;
 }
 
 void increaseTransistors(number by) {
@@ -145,6 +209,7 @@ number calcTPS() {
 void onTick() {
 	number TPS = calcTPS();
 	increaseTransistors(TPS / 16);
+	testTriggers(CMD::arguments);
 }
 
 void onExit(std::vector<str>&) {
@@ -169,7 +234,8 @@ void balance(std::vector<str>& args) {
 			number producing;
 			number TPS = calcTPS();
 			number basePrice;
-			str buildingName;
+			str buildingName = args[1];
+			bool unlocked;
 
 			args[1] = tolower(args[1]);
 
@@ -184,44 +250,52 @@ void balance(std::vector<str>& args) {
 				    count = save.cusors;
 				    producing = calcCursorYeild();
 					basePrice = cursorPrice;
+					unlocked = save.cursorUnlocked;
 				    break;
 				case moss:
 				    buildingName = "moss";
 				    count = save.moss;
 				    producing = calcMossYeild();
 					basePrice = mossPrice;
+					unlocked = save.mossUnlocked;
 				    break;
 				case smallFAB:
 				    buildingName = "small FAB";
 				    count = save.smallFABs;
 				    producing = calcSmallFABYeild();
 					basePrice = smallFABPrice;
+					unlocked = save.smallFABUnlocked;
 				    break;
 				case mediumFAB:
 				    buildingName = "medium FAB";
 				    count = save.mediumFABs;
 				    producing = calcMediumFABYeild();
 					basePrice = mediumFABprice;
+					unlocked = save.mediumFABUnlocked;
 				    break;
 				case largeFAB:
 				    buildingName = "large FAB";
 				    count = save.largeFABs;
 				    producing = calcLargeFABYeild();
 					basePrice = largeFABPrice;
+					unlocked = save.largeFABUnlocked;
 				    break;
 				default:
-				    std::cout << BOLDRED << "Unknown building!\n";
-				    return;
+					unlocked = false;
+				    break;
 			}
 
+			if(!unlocked) {
+				std::cout << BOLDRED << "Unknown building!\n";
+				return;
+			}
 			if(count > 0) {
 			yeild = producing / count;
 				
-		    integer thousandthsOfTPS = toInt((yeild * count / TPS) * 1000);
-			number percent = thousandthsOfTPS / 10;
+		    number percent = producing / TPS * 100;
 
 			std::cout << BOLDBLUE << "You have " << BOLDGREEN << count << BOLDBLUE << ' ' << buildingName << "s, each producing " << TransitorsString(yeild) << " per second.\n";
-			std::cout << "which produces " << TransitorsString(producing) << " per second in total which accounts for " << BOLDGREEN << percent << "%" << BOLDBLUE << " of your total TPS.\n";
+			std::cout << "which produces " << TransitorsString(producing, false) << " per second in total which accounts for " << BOLDGREEN << GRP::toString(percent) << "%" << BOLDBLUE << " of your total TPS.\n";
 			std::cout << "One " << buildingName << " would cost " << TransitorsString(expandPrice(basePrice, count)) << ".\n";
 			return;
 			} else {
@@ -252,38 +326,48 @@ void buy(std::vector<str>& args) {
 	str buildingName;
 	number basePrice;
 	integer* countPtr = nullptr;
+	bool buildingUnlocked = false;
 
 	switch(hash(building)) {
 		case cursor:
 		    buildingName = "cursor";
 		    basePrice = cursorPrice;
 			countPtr = &save.cusors;
+			buildingUnlocked = save.cursorUnlocked;
 		    break;
 		case moss:
 		    buildingName = "moss";
 		    basePrice = mossPrice;
 		    countPtr = &save.moss;
+			buildingUnlocked = save.mossUnlocked;
 		    break;
 		case smallFAB:
 		    buildingName = "small FAB";
 		    basePrice = smallFABPrice;
 		    countPtr = &save.smallFABs;
+			buildingUnlocked = save.smallFABUnlocked;
 		    break;
 		case mediumFAB:
 		    buildingName = "medium FAB";
 		    basePrice = mediumFABprice;
 		    countPtr = &save.mediumFABs;
+			buildingUnlocked = save.mediumFABUnlocked;
 		    break;
 		case largeFAB:
 		    buildingName = "large FAB";
 		    basePrice = largeFABPrice;
 		    countPtr = &save.largeFABs;
+			buildingUnlocked = save.largeFABUnlocked;
 		    break;
 		default:
-		    std::cout << BOLDRED << "Unknown building!\n";
-			return;
+		    buildingUnlocked = false;
+			break;
 	}
 
+	if(!buildingUnlocked) {
+		std::cout << BOLDRED << "Unknown building!\n";
+		return;
+	}
 	integer& count = *countPtr;
 
 	if(args.size() >= 2) {
@@ -414,6 +498,12 @@ int main() {
 	CMD::addcommand("buy", buy);
 	CMD::addcommand("clear",  clear);
 	CMD::addcommand("help", help);
+
+	addTrigger({isCursorUnLocked, unlockCursor});
+	addTrigger({isMossUnLocked, unlockMoss});
+	addTrigger({isSmallFABUnLocked, unlockSmallFAB});
+	addTrigger({isMediumFABUnLocked, unlockMediumFAB});
+	addTrigger({isLargeFABUnLocked, unlockLargeFAB});
 
 	CMD::log("Program iniitialized");
 
