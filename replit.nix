@@ -1,9 +1,8 @@
 { pkgs }: {
 	deps = [
-   pkgs.fuse-emulator
-   pkgs.kmod
-   pkgs.sshfs
-   pkgs.openssh
+   pkgs.neofetch
+        pkgs.sshfs
+        pkgs.openssh
 		pkgs.clang
 		pkgs.ccls
 		pkgs.gdb
