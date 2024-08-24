@@ -1,0 +1,17 @@
+TODOLIST
+
+0.0.2 [ ]
+
+[x] refactoring {
+
+ - [x] move the upgrade and acheivement lists out of save
+ - [x] rename save to something better
+ - [x] redo the list command
+}
+
+[ ] acheivements {
+
+ - [x] add interface functions
+ - [ ] add getcheck triggers
+ - [ ] add display subcommands
+}
