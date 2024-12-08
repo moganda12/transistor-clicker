@@ -1,0 +1,56 @@
+{
+    "buildings": {
+        "cursor": {
+            "count": "1"
+        },
+        "largeFAB": {
+            "count": "0"
+        },
+        "mediumFAB": {
+            "count": "0"
+        },
+        "moss": {
+            "count": "5"
+        },
+        "smallFAB": {
+            "count": "0"
+        }
+    },
+    "totalTransistors": {
+        "denominator": "160",
+        "numerator": "663837"
+    },
+    "transistorBalance": {
+        "denominator": "1600",
+        "numerator": "5535589"
+    },
+    "upgrades": {
+        "cheap lithography machines": {
+            "bought": false
+        },
+        "chippy": {
+            "bought": false
+        },
+        "denser chips": {
+            "bought": false
+        },
+        "endgame": {
+            "bought": false
+        },
+        "faster fingers": {
+            "bought": false
+        },
+        "integrated mouse": {
+            "bought": false
+        },
+        "moss walls": {
+            "bought": false
+        },
+        "mossier tech": {
+            "bought": false
+        },
+        "mossy mossy": {
+            "bought": false
+        }
+    }
+}

@@ -1,9 +1,11 @@
 #include <gmpxx.h>
 #include <math.h>
 #include <sstream>
+#include <fstream>
 
 #include "./lib/CMD.hpp"
 #include "./lib/GRP.hpp"
+#include "./lib/json.hpp"
 
 #define RESET   "\033[0m"       /* Reset */
 #define BLACK   "\033[30m"      /* Black */
@@ -24,6 +26,7 @@
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
 using str = std::string;
+using json = nlohmann::json;
 
 using integer = mpz_class;
 using flat = mpf_class;
@@ -154,10 +157,10 @@ std::unordered_map<str, size_t> acheivementIndex;
 TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
 
 const str name = "Transistor Clicker";
-const str version = "0.0.1_2";
+const str version = "0.0.2 DevBuild 2.0";
 
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABPrice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
-const number cursorYeild = 0.1, mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
+const number cursorYeild = number(1, 10), mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
 const number expantionFactor = number(23, 20);
 
 UpgradeGroup cursorUpgrades(&upgrades);
@@ -165,6 +168,14 @@ UpgradeGroup mossUpgrades(&upgrades);
 UpgradeGroup smallFABUpgrades(&upgrades);
 UpgradeGroup mediumFABUpgrades(&upgrades);
 UpgradeGroup largeFABUpgrades(&upgrades);
+
+integer getrationalnumerator(number n) {
+	return integer(n.get_num_mpz_t());
+}
+
+integer getrationaldenominator(number n) {
+	return integer(n.get_den_mpz_t());
+}
 
 void createUpgrade(str Uname, str description, str effect, str flavortext, number cost) {
 	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false});
@@ -199,6 +210,7 @@ number pow(number base, integer exponent) {
 	for(integer i = 0; i < exponent; i++) {
 		result *= base;
 	}
+	result.canonicalize();
 	return result;
 }
 
@@ -238,6 +250,8 @@ str numString(number x, str thing, str plural = "s", integer precision = 0, str 
 
 	return result.str();
 }
+
+
 
 str TransitorsString(number transistors, integer precision = 0, str colA = BOLDGREEN, str colB = BOLDBLUE) {
 	return numString(transistors, "transistor", "s", precision, colA, colB);
@@ -367,6 +381,103 @@ void unLockMossyTech(std::vector<str>& args) {
 void unLockEndgame(std::vector<str>& args) {
 	Upgrade& Endgame = upgrades[getUpgradeByName("endgame")];
 	Endgame.unlocked = true;
+}
+
+integer json_read_integer_safe(json::value_type j, integer def = 0) {
+	if(j.is_null()) {
+		return def;
+	}
+
+	return integer((str)j);
+}
+
+bool json_bool_nullcheck(json::value_type j, bool def = false) {
+	if(j.is_null()) {
+		return def;
+	}
+
+	return j;
+}
+
+number json_read_number(json j, number def = 0) {
+	if(j.find("numerator") == j.end() || j.find("denominator") == j.end()) {
+		return def;
+	}
+	
+	integer numerator = integer((str)j["numerator"]);
+	integer denominator = integer((str)j["denominator"]);
+
+	return number(numerator, denominator);
+}
+
+void json_dump_number(json& j, number n) {
+	j["numerator"] = getrationalnumerator(n).get_str();
+	j["denominator"] = getrationaldenominator(n).get_str();
+}
+
+void saveGame(str fname) {
+	json saveData = json::parse("{}");
+
+	gameState.transistorBalance.canonicalize();
+
+	json_dump_number(saveData["transistorBalance"], gameState.transistorBalance);
+
+	json_dump_number(saveData["totalTransistors"], gameState.totalTransistors);
+
+	json& buildings = saveData["buildings"];
+
+	json& cursor = buildings["cursor"];
+	json& moss = buildings["moss"];
+	json& smallFAB = buildings["smallFAB"];
+	json& mediumFAB = buildings["mediumFAB"];
+	json& largeFAB = buildings["largeFAB"];
+	
+	cursor["count"] = gameState.cusors.get_str();
+	moss["count"] = gameState.moss.get_str();
+	smallFAB["count"] = gameState.smallFABs.get_str();
+	mediumFAB["count"] = gameState.mediumFABs.get_str();
+	largeFAB["count"] = gameState.largeFABs.get_str();
+
+	json& upgradesJson = saveData["upgrades"];
+
+	for(Upgrade& upgrade : upgrades) {
+		json& upgradeJson = upgradesJson[upgrade.name];
+		upgradeJson["bought"] = upgrade.purchased;
+	}
+
+	std::remove(fname.c_str());
+
+	std::ofstream saveFile(fname);
+	saveFile << saveData.dump(4) << std::flush;
+}
+
+void loadGame(str fname) {
+	std::ifstream saveFile(fname);
+	json saveData = json::parse(saveFile);
+
+	gameState.transistorBalance = json_read_number(saveData["transistorBalance"]);
+	gameState.totalTransistors = json_read_number(saveData["totalTransistors"]);
+
+	json& buildings = saveData["buildings"];
+
+	json& cursor = buildings["cursor"];
+	json& moss = buildings["moss"];
+	json& smallFAB = buildings["smallFAB"];
+	json& mediumFAB = buildings["mediumFAB"];
+	json& largeFAB = buildings["largeFAB"];
+
+	gameState.cusors = json_read_integer_safe(cursor["count"]);
+	gameState.moss = json_read_integer_safe(moss["count"]);
+	gameState.smallFABs = json_read_integer_safe(smallFAB["count"]);
+	gameState.mediumFABs = json_read_integer_safe(mediumFAB["count"]);
+	gameState.largeFABs = json_read_integer_safe(largeFAB["count"]);
+
+	json& upgradesJson = saveData["upgrades"];
+
+	for(Upgrade& upgrade : upgrades) {
+		json& upgradeJson = upgradesJson[upgrade.name];
+		upgrade.purchased = json_bool_nullcheck(upgradeJson["bought"]);
+	}
 }
 
 number calcCursorYeild() {
@@ -592,7 +703,7 @@ void buy(std::vector<str>& args) {
 				std::cout << BOLDBLUE << "You bought " << upgrade.name << " for " << TransitorsString(upgrade.cost) << ".\n";
 				return;
 			} else {
-				std::cout << BOLDRED << "You don't have enough transistors to buy " << upgrade.name;
+				std::cout << BOLDRED << "You don't have enough transistors to buy " << upgrade.name << '\n';
 				return;
 			}
 		}
@@ -921,35 +1032,43 @@ void list(std::vector<str>& args) {
 					}
 				}
 			}
-		}
-	} else if(args[0] == "building" || args[0] == "buildings") {
-		std::cout << BOLDWHITE << "Buildings:\n\n";
+		} else if(args[0] == "building" || args[0] == "buildings") {
+			std::cout << BOLDWHITE << "Buildings:\n\n";
 
-		if(gameState.cursorUnlocked) {
-		    std::cout << BOLDBLUE << "Cursor - " << "Autoclicks once every 10 seconds\n";
-		    std::cout << "one will cost " << TransitorsString(expandPrice(cursorPrice, gameState.cusors)) << "!\n\n";
-		}
-		
-		if(gameState.mossUnlocked) {
-			std::cout << BOLDBLUE << "Moss - " << "Some moss to... somthing more transistors\n";
-			std::cout << "one will cost " << TransitorsString(expandPrice(mossPrice, gameState.moss)) << "!\n\n";
-		}
+			if(gameState.cursorUnlocked) {
+				std::cout << BOLDBLUE << "Cursor - " << "Autoclicks once every 10 seconds\n";
+				std::cout << "one will cost " << TransitorsString(expandPrice(cursorPrice, gameState.cusors)) << "!\n\n";
+			}
 
-		if(gameState.smallFABUnlocked) {
-			std::cout << BOLDBLUE << "Small FAB - " << "Small FABs make microchips which contain transistors\n";
-			std::cout << "one will cost " << TransitorsString(expandPrice(smallFABPrice, gameState.smallFABs)) << "!\n\n";
-		}
+			if(gameState.mossUnlocked) {
+				std::cout << BOLDBLUE << "Moss - " << "Some moss to... somthing more transistors\n";
+				std::cout << "one will cost " << TransitorsString(expandPrice(mossPrice, gameState.moss)) << "!\n\n";
+			}
 
-		if(gameState.mediumFABUnlocked) {
-			std::cout << BOLDBLUE << "Medium FAB - " << "A faster fab to make more transistors\n";
-			std::cout << "one will cost " << TransitorsString(expandPrice(mediumFABPrice, gameState.mediumFABs)) << "!\n\n";
-		}
+			if(gameState.smallFABUnlocked) {
+				std::cout << BOLDBLUE << "Small FAB - " << "Small FABs make microchips which contain transistors\n";
+				std::cout << "one will cost " << TransitorsString(expandPrice(smallFABPrice, gameState.smallFABs)) << "!\n\n";
+			}
 
-		if(gameState.largeFABUnlocked) {
-			std::cout << BOLDBLUE << "Large FAB - " << "A yet larger FAB to make transistors at an even faster rate\n";
-			std::cout << "one will cost " << TransitorsString(expandPrice(largeFABPrice, gameState.mediumFABs)) << "!\n\n";
+			if(gameState.mediumFABUnlocked) {
+				std::cout << BOLDBLUE << "Medium FAB - " << "A faster fab to make more transistors\n";
+				std::cout << "one will cost " << TransitorsString(expandPrice(mediumFABPrice, gameState.mediumFABs)) << "!\n\n";
+			}
+
+			if(gameState.largeFABUnlocked) {
+				std::cout << BOLDBLUE << "Large FAB - " << "A yet larger FAB to make transistors at an even faster rate\n";
+				std::cout << "one will cost " << TransitorsString(expandPrice(largeFABPrice, gameState.mediumFABs)) << "!\n\n";
+			}
 		}
 	}
+}
+
+void save(std::vector<str>& args) {
+	saveGame("save/test.json");
+}
+
+void load(std::vector<str>& args) {
+	loadGame("save/test.json");
 }
 
 int main() {
@@ -972,9 +1091,11 @@ int main() {
 	CMD::addcommand("help", help);
 	CMD::addcommand("info", info);
 	CMD::addcommand("list", list);
+	CMD::addcommand("load", load);
+	CMD::addcommand("save", save);
 
 	createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades);
-	createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauteed!", 500, cursorUpgrades);
+	createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades);
 	createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades);
 
 	addTrigger({canUnLockIntegratedMouse, unLockIntegratedMouse});
