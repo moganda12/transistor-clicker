@@ -13,7 +13,7 @@ TODOLIST
     - [x] make game restart on termination
     - [x] add game intermideate interface
     - [x] remove load command
-    - [ ] index saves
+    - [x] index saves
     - [ ] add save renaming and copy
 }
 

@@ -1116,9 +1116,11 @@ int main() {
 		std::cout << BOLDYELLOW << "Actions:\n\n";
 
 		std::cout << BOLDGREEN << "n" << RESET << " - New game\n";
-		std::cout << BOLDGREEN << "l" << RESET << " - load game\n";
-		std::cout << BOLDGREEN << "d" << RESET << " - delete game\n";
-		std::cout << BOLDGREEN << "e" << RESET << " - exit\n\n";
+		std::cout << BOLDGREEN << "l" << RESET << " - Load game\n";
+		std::cout << BOLDGREEN << "d" << RESET << " - Delete game\n";
+		std::cout << BOLDGREEN << "c" << RESET << " - Copy save\n";
+		std::cout << BOLDGREEN << "m" << RESET << " - Move save\n";
+		std::cout << BOLDGREEN << "e" << RESET << " - Exit\n\n";
 
 		std::cout << "Action: ";
 
@@ -1214,6 +1216,16 @@ select:
 				goto rerun;
 			}
 
+			str sure;
+
+			std::cout << "\nAre you sure [y/N]?";
+
+			std::getline(std::cin, sure);
+
+			if(tolower(sure) != "y") {
+				goto rerun;
+			}
+
 			std::filesystem::remove("save/" + delName + ".json");
 
 			saveNames.erase(saveNames.find(delName));
@@ -1227,9 +1239,119 @@ select:
 			indexFileWrite << index.dump(4) << std::flush;
 
 			goto rerun;
+		} else if(action == "c") {
+			str delName;
+
+			std::ifstream indexFile("save/saveindex.json");
+			json index = json::parse(indexFile);
+
+			std::cout << BOLDYELLOW << "\nSaves:\n";
+
+			json& saveNames = index["saves"];
+
+			for(str name : saveNames) {
+				std::cout << BOLDWHITE << name << '\n';
+			}
+
+			std::cout << RESET << "\nSave name: ";
+
+			getline(std::cin, delName);
+
+			if(delName == "" || delName.back() == ' ' || delName == "saveindex") {
+				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				goto rerun;
+			}
+
+			if(!std::filesystem::exists("save/" + delName + ".json")) {
+				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				goto rerun;
+			}
+
+			str cpyTo;
+
+			getline(std::cin, cpyTo);
+
+			saveNames.push_back(cpyTo);
+
+			indexFile.close();
+
+			std::ifstream src("save/" + delName + ".json", std::ios::binary);
+    		std::ofstream dst("save/" + cpyTo   + ".json", std::ios::binary);
+
+    		dst << src.rdbuf();
+
+			src.close();
+			dst.close();
+
+			std::remove("save/saveindex.json");
+
+			std::ofstream indexFileWrite("save/saveindex.json");
+
+			indexFileWrite << index.dump(4) << std::flush;
+
+			goto rerun; 
+		} else if(action == "c") {
+			str delName;
+
+			std::ifstream indexFile("save/saveindex.json");
+			json index = json::parse(indexFile);
+
+			std::cout << BOLDYELLOW << "\nSaves:\n";
+
+			json& saveNames = index["saves"];
+
+			for(str name : saveNames) {
+				std::cout << BOLDWHITE << name << '\n';
+			}
+
+			std::cout << RESET << "\nSave name: ";
+
+			getline(std::cin, delName);
+
+			if(delName == "" || delName.back() == ' ' || delName == "saveindex") {
+				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				goto rerun;
+			}
+
+			if(!std::filesystem::exists("save/" + delName + ".json")) {
+				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				goto rerun;
+			}
+
+			str cpyTo;
+
+			getline(std::cin, cpyTo);
+
+			uint64_t nameIndex = saveNames.find(delName);
+
+			saveNames[nameIndex] = cpyTo;
+
+			indexFile.close();
+
+			std::ifstream src("save/" + delName + ".json", std::ios::binary);
+    		std::ofstream dst("save/" + cpyTo   + ".json", std::ios::binary);
+
+    		dst << src.rdbuf();
+
+			src.close();
+			dst.close();
+
+			std::filesystem::remove("save/" + delName + ".json");
+
+			std::remove("save/saveindex.json");
+
+			std::ofstream indexFileWrite("save/saveindex.json");
+
+			indexFileWrite << index.dump(4) << std::flush;
+
+			goto rerun; 
 		} else if(action == "e") {
 			break;
 			exited = true;
+		} else {
+			std::cout << BOLDRED << "\nInvalid action!";
+			std::this_thread::sleep_for(std::chrono::seconds(10));
+			goto rerun;
 		}
 
 		{
