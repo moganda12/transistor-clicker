@@ -1153,7 +1153,7 @@ naming:
 
 			std::remove("save/saveindex.json");
 
-			std::ofstream indexFileWrite;
+			std::ofstream indexFileWrite("save/saveindex.json");
 
 			indexFileWrite << index.dump(4) << std::flush;
 
@@ -1222,7 +1222,7 @@ select:
 
 			std::remove("save/saveindex.json");
 
-			std::ofstream indexFileWrite;
+			std::ofstream indexFileWrite("save/saveindex.json");
 
 			indexFileWrite << index.dump(4) << std::flush;
 
