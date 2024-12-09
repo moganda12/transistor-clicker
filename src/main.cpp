@@ -2,6 +2,7 @@
 #include <math.h>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 #include "./lib/CMD.hpp"
 #include "./lib/GRP.hpp"
@@ -24,6 +25,8 @@
 #define BOLDMAGENTA "\033[1m\033[35m"      /* Bold Magenta */
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
+
+#define DEBUG
 
 using str = std::string;
 using json = nlohmann::json;
@@ -157,7 +160,7 @@ std::unordered_map<str, size_t> acheivementIndex;
 TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
 
 const str name = "Transistor Clicker";
-const str version = "0.0.2 DevBuild 2.0";
+const str version = "0.0.2 DevBuild 2.3";
 
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABPrice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = number(1, 10), mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
@@ -168,6 +171,8 @@ UpgradeGroup mossUpgrades(&upgrades);
 UpgradeGroup smallFABUpgrades(&upgrades);
 UpgradeGroup mediumFABUpgrades(&upgrades);
 UpgradeGroup largeFABUpgrades(&upgrades);
+
+str gameName;
 
 integer getrationalnumerator(number n) {
 	return integer(n.get_num_mpz_t());
@@ -916,9 +921,13 @@ void help(std::vector<str>& args) {
 	if(args.size() < 1) {
 		std::cout << BOLDBLUE << "Commands:\n";
 		std::cout << BOLDBLUE << "balance " << RESET << " - Shows info about your transistor balance\n";
-		std::cout << BOLDBLUE << "buy " << RESET << " - Buys the selected item\n";
-		std::cout << BOLDBLUE << "clear " << RESET << " - Clears the console\n";
-		std::cout << BOLDBLUE << "help " << RESET << " - Gives assistance\n";
+		std::cout << BOLDBLUE << "buy     " << RESET << " - Buys the selected item\n";
+		std::cout << BOLDBLUE << "clear   " << RESET << " - Clears the console\n";
+		std::cout << BOLDBLUE << "help    " << RESET << " - Gives assistance\n";
+		std::cout << BOLDBLUE << "save    " << RESET << " - Saves game\n";
+		#ifdef DEBUG
+		std::cout << BOLDBLUE << "bHash" << RESET << " - Lists building hashes\n";
+		#endif
 	} else if(args.size() >= 1) {
 		if(args[0] == "balance") {
 			if(args.size() == 1) {
@@ -930,7 +939,7 @@ void help(std::vector<str>& args) {
 			std::cout << BOLDBLUE << "defualt" << RESET << " - transistor\n";
 			std::cout << BOLDCYAN << "Subcommands:\n";
 			std::cout << BOLDBLUE << "building" << RESET << " - Shows quantitative info about a building\n";
-			} else if(args.size() == 2) {
+			} else if(args.size() >= 2) {
 				if(args[1] == "building") {
 					std::cout << BOLDWHITE << "BALANCE BUILDING\n";
 					std::cout << RESET << "Show quantitative info about a building\n";
@@ -977,7 +986,15 @@ void help(std::vector<str>& args) {
 			std::cout << BOLDCYAN << "Subcommands:\n";
 			std::cout << BOLDBLUE << "buildings" << RESET << " - Shows info about selected building\n";
 			std::cout << BOLDBLUE << "upgrades" << RESET << " - Shows info about selected upgrade\n";
+		} 
+		#ifdef DEBUG 
+		else if(args[0] == "bHash") {
+			std::cout << BOLDWHITE << "BHASH\n";
+			std::cout << RESET << "lists building hashes\n";
+			std::cout << BOLDCYAN << "Usage:\n";
+			std::cout << RESET << "bHash\n";
 		}
+		#endif
 	}
 }
 
@@ -1064,77 +1081,218 @@ void list(std::vector<str>& args) {
 }
 
 void save(std::vector<str>& args) {
-	saveGame("save/test.json");
+	if(gameName == "") {
+		std::cout << BOLDRED << "This is invalid state, HACKER!";
+	}
+
+	std::cout << BOLDWHITE << "SAVING...\n";
+
+	saveGame("save/" + gameName + ".json");
+
+	std::cout << BOLDGREEN << "Done!\n";
 }
 
-void load(std::vector<str>& args) {
-	loadGame("save/test.json");
+void bHash(std::vector<str>& args) {
+	str buildings[] = {"cursor", "moss", "smallFAB", "mediumFAB", "largeFAB", "i860", "startup", "oaktree"};
+
+	for(int i = 0; i < 8; i++) {
+		std::stringstream ss;
+		ss << buildings[i] << ":" << hash(tolower(buildings[i]));
+		CMD::log(ss.str());
+	}
 }
 
 int main() {
 	GRP::init();
 	
-	std::jthread gameThread = CMD::init(name, BOLDGREEN + str("@HCC") + BOLDBLUE + " ~/You" + RESET + "$ ", onTick);
+	bool exited = false;
 
-	CMD::exit = onExit;
+	while(!exited) {
 
-	/*str buildings[] = {"cursor", "moss", "smallFAB", "mediumFAB", "largeFAB", "i860", "startup", "oak tree"};
-	for(int i = 0; i < 8; i++) {
-		std::stringstream ss;
-		ss << buildings[i] << ":" << hash(tolower(buildings[i]));
-		CMD::log(ss.str());
-	}*/
+		std::cout << BOLDBLUE << name << ' ' << BOLDGREEN << version << RESET << "\n\n";
 
-	CMD::addcommand("balance", balance);
-	CMD::addcommand("buy", buy);
-	CMD::addcommand("clear", clear);
-	CMD::addcommand("help", help);
-	CMD::addcommand("info", info);
-	CMD::addcommand("list", list);
-	CMD::addcommand("load", load);
-	CMD::addcommand("save", save);
+		str action;
 
-	createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades);
-	createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades);
-	createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades);
+		std::cout << BOLDYELLOW << "Actions:\n\n";
 
-	addTrigger({canUnLockIntegratedMouse, unLockIntegratedMouse});
-	addTrigger({canUnLockFastFing, unLockFastFing});
-	addTrigger({canUnLockChippy, unLockChippy});
+		std::cout << BOLDGREEN << "n" << RESET << " - New game\n";
+		std::cout << BOLDGREEN << "l" << RESET << " - load game\n";
+		std::cout << BOLDGREEN << "d" << RESET << " - delete game\n";
+		std::cout << BOLDGREEN << "e" << RESET << " - exit\n\n";
 
-	createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades);
-	createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades);
+		std::cout << "Action: ";
+
+		getline(std::cin, action);
+
+		if(action == "n") {
+			gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
+
+naming:
+			std::cout << "\nGame name: ";
+
+			getline(std::cin, gameName);
+
+			if(gameName == "" || gameName.back() == ' ' || gameName == "saveindex") {
+				std::cout << BOLDRED << "Please enter valid name" << RESET;
+				goto naming;
+			}
+
+			if(std::filesystem::exists("save/" + gameName + ".json")) {
+				std::cout << BOLDRED << "Save already exists\n" << RESET;
+				goto naming;
+			}
+
+			std::ofstream save("save/" + gameName + ".json");
+			save << " ";
+
+			std::ifstream indexFile("save/saveindex.json");
+
+			json index = json::parse(indexFile);
+
+			index["saves"].push_back(gameName);
+
+			std::remove("save/saveindex.json");
+
+			std::ofstream indexFileWrite;
+
+			indexFileWrite << index.dump(4) << std::flush;
+
+			std::cout << index.dump(4);
+		} else if (action == "l") {
+			std::ifstream indexFile("save/saveindex.json");
+			json index = json::parse(indexFile);
+
+select:
+			std::cout << BOLDYELLOW << "\nSaves:\n";
+
+			json saveNames = index["saves"];
+
+			for(str name : saveNames) {
+				std::cout << BOLDWHITE << name << '\n';
+			}
+
+			std::cout << RESET     << "\nSave name: ";
+
+			getline(std::cin, gameName);
+
+			if(gameName == "" || gameName.back() == ' ' || gameName == "saveindex") {
+				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				goto select;
+			}
+
+			if(!std::filesystem::exists("save/" + gameName + ".json")) {
+				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				goto select;
+			}
+
+			loadGame("save/" + gameName + ".json");
+		} else if(action == "d") {
+			str delName;
+
+			std::ifstream indexFile("save/saveindex.json");
+			json index = json::parse(indexFile);
+
+			std::cout << BOLDYELLOW << "\nSaves:\n";
+
+			json& saveNames = index["saves"];
+
+			for(str name : saveNames) {
+				std::cout << BOLDWHITE << name << '\n';
+			}
+
+			std::cout << RESET << "\nSave name: ";
+
+			getline(std::cin, delName);
+
+			if(delName == "" || delName.back() == ' ' || delName == "saveindex") {
+				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				goto rerun;
+			}
+
+			if(!std::filesystem::exists("save/" + delName + ".json")) {
+				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				goto rerun;
+			}
+
+			std::filesystem::remove("save/" + delName + ".json");
+
+			saveNames.erase(saveNames.find(delName));
+
+			indexFile.close();
+
+			std::remove("save/saveindex.json");
+
+			std::ofstream indexFileWrite;
+
+			indexFileWrite << index.dump(4) << std::flush;
+
+			goto rerun;
+		} else if(action == "e") {
+			break;
+			exited = true;
+		}
+
+		{
+		std::jthread gameThread = CMD::init(name, BOLDGREEN + str("@HCC") + BOLDBLUE + " ~/You" + RESET + "$ ", onTick);
+
+		CMD::exit = onExit;
+
+		CMD::addcommand("balance", balance);
+		CMD::addcommand("buy", buy);
+		CMD::addcommand("clear", clear);
+		CMD::addcommand("help", help);
+		CMD::addcommand("info", info);
+		CMD::addcommand("list", list);
+		CMD::addcommand("save", save);
+		#ifdef DEBUG
+		CMD::addcommand("bHash", bHash);
+		#endif
+
+		createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades);
+		createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades);
+		createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades);
+
+		addTrigger({canUnLockIntegratedMouse, unLockIntegratedMouse});
+		addTrigger({canUnLockFastFing, unLockFastFing});
+		addTrigger({canUnLockChippy, unLockChippy});
+
+		createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades);
+		createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades);
 	
-	addTrigger({canUnLockMossyMossy, unLockMossyMossy});
-	addTrigger({canUnLockMossWalls, unLockMossWalls});
+		addTrigger({canUnLockMossyMossy, unLockMossyMossy});
+		addTrigger({canUnLockMossWalls, unLockMossWalls});
 
-	createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades);
-	createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades);
+		createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades);
+		createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades);
 
-	addTrigger({canUnLockCheapMachines, unLockCheapMachines});
-	addTrigger({canUnLockDenseChips, unLockDenseChips});
+		addTrigger({canUnLockCheapMachines, unLockCheapMachines});
+		addTrigger({canUnLockDenseChips, unLockDenseChips});
 
-	createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades);
+		createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades);
 
-	addTrigger({canUnLockMossyTech, unLockMossyTech});
+		addTrigger({canUnLockMossyTech, unLockMossyTech});
 
-	createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades);
+		createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades);
 
-	addTrigger({canUnLockEndgame, unLockEndgame});
+		addTrigger({canUnLockEndgame, unLockEndgame});
 
-	addTrigger({isCursorUnLocked, unlockCursor});
-	addTrigger({isMossUnLocked, unlockMoss});
-	addTrigger({isSmallFABUnLocked, unlockSmallFAB});
-	addTrigger({isMediumFABUnLocked, unlockMediumFAB});
-	addTrigger({isLargeFABUnLocked, unlockLargeFAB});
+		addTrigger({isCursorUnLocked, unlockCursor});
+		addTrigger({isMossUnLocked, unlockMoss});
+		addTrigger({isSmallFABUnLocked, unlockSmallFAB});
+		addTrigger({isMediumFABUnLocked, unlockMediumFAB});
+		addTrigger({isLargeFABUnLocked, unlockLargeFAB});
 
-	CMD::log("Program iniitialized");
+		CMD::log("Program iniitialized");
 
-	CMD::runcomm("clear", click);
+		CMD::runcomm("clear", click);
 
-	CMD::command_loop(click);
+		CMD::command_loop(click);
 
-	CMD::kill(gameThread);
+		CMD::kill(gameThread);
+		}
+rerun:
+	int useless = 0;
+	}
 
 	return 0;
 }

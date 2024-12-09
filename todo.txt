@@ -9,6 +9,14 @@ TODOLIST
  - [x] redo the list command
 }
 
+[ ] make intermideate interface {
+    - [x] make game restart on termination
+    - [x] add game intermideate interface
+    - [x] remove load command
+    - [ ] index saves
+    - [ ] add save renaming and copy
+}
+
 [ ] acheivements {
 
  - [x] add interface functions
