@@ -76,7 +76,7 @@ struct Acheivement {
     str name;
     str description;
     str flavortext;
-    bool completed;
+    bool earned;
 };
 
 struct TclickerState {
@@ -423,6 +423,12 @@ void onExit(std::vector<str>&) {
 
 #pragma region THE WALL
 
+
+
+
+
+#pragma region for upgrades
+
 void unlockCursor(std::vector<str>& args) {
 	gameState.cursorUnlocked = true;
 }
@@ -543,6 +549,16 @@ void unLockEndgame(std::vector<str>& args) {
 	Upgrade& Endgame = upgrades[getUpgradeByName("endgame")];
 	Endgame.unlocked = true;
 }
+
+#pragma endregion
+
+
+
+
+
+#pragma region for acheivements
+#pragma endregion
+
 
 #pragma endregion
 
@@ -1092,7 +1108,7 @@ void list(std::vector<str>& args) {
 	if(args.size() < 1) {
 		std::cout << BOLDRED << "You must specify some group of things to list!\n";
 	} else if(args.size() >= 1) {
-		if(args[0] == "upgrade" || args[0] == "upgrades") {
+			   if(args[0] == "upgrade" || args[0] == "upgrades") {
 			if(args.size() == 1) {
 				std::cout << BOLDWHITE << "Upgrades:\n\n";
 
@@ -1108,8 +1124,8 @@ void list(std::vector<str>& args) {
 
 					for(Upgrade& upgrade : upgrades) {
 						if(upgrade.purchased) {
-							std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << '\n';
-							std::cout << "cost " << TransitorsString(upgrade.cost, 0) << "!\n\n";
+							std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << "(owned)\n";
+							std::cout << BOLDBLUE << "cost " << TransitorsString(upgrade.cost, 0) << "!\n\n";
 						}
 					}
 				} else if(args[1] == "all") {
@@ -1129,7 +1145,7 @@ void list(std::vector<str>& args) {
 					}
 
 					for(Upgrade& upgrade : owned) {
-						std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << '\n';
+						std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << "(owned)\n";
 						std::cout << "will cost " << TransitorsString(upgrade.cost) << "!\n\n";
 					}
 
@@ -1137,6 +1153,15 @@ void list(std::vector<str>& args) {
 						std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << '\n';
 						std::cout << "cost " << TransitorsString(upgrade.cost) << "!\n\n";
 					}
+				}
+			}
+		} else if(args[0] == "acheivement" || args[0] == "acheivements") {
+			if(args.size() >= 1) {
+				std::cout << BOLDWHITE << "Acheivments:";
+
+				for(Acheivement& acheivement : acheivements) {
+					std::cout << BOLDBLUE << acheivement.name << " - " << acheivement.description << '\n';
+					std::cout << BOLDBLUE << '"' << acheivement.flavortext << "\"\n\n";
 				}
 			}
 		} else if(args[0] == "building" || args[0] == "buildings") {

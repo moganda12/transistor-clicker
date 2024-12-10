@@ -2,12 +2,12 @@
 
 0.0.2 [ ]
 
-[ ] refactoring {
+[x] refactoring {
 
     - [x] move the upgrade and acheivement lists out of save
     - [x] rename save to something better
     - [x] redo the list command
-    - [ ] section off code into regions
+    - [x] section off code into regions
 }
 
 [x] make main menu {
