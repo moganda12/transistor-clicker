@@ -18,11 +18,11 @@
     },
     "totalTransistors": {
         "denominator": "160",
-        "numerator": "663837"
+        "numerator": "698821"
     },
     "transistorBalance": {
         "denominator": "1600",
-        "numerator": "5535589"
+        "numerator": "5885429"
     },
     "upgrades": {
         "cheap lithography machines": {

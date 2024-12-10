@@ -1244,12 +1244,12 @@ select:
 			getline(std::cin, gameName);
 
 			if(gameName == "" || gameName.back() == ' ' || gameName == "saveindex") {
-				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				std::cout << BOLDRED << "Please enter valid name\n\n" << RESET;
 				goto select;
 			}
 
 			if(!std::filesystem::exists("save/" + gameName + ".json")) {
-				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				std::cout << BOLDRED << "Save do not exist\n\n" << RESET;
 				goto select;
 			}
 
@@ -1273,12 +1273,12 @@ select:
 			getline(std::cin, delName);
 
 			if(delName == "" || delName.back() == ' ' || delName == "saveindex") {
-				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				std::cout << BOLDRED << "Please enter valid name\n\n" << RESET;
 				goto rerun;
 			}
 
 			if(!std::filesystem::exists("save/" + delName + ".json")) {
-				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				std::cout << BOLDRED << "Save does not exist\n\n" << RESET;
 				goto rerun;
 			}
 
@@ -1304,6 +1304,8 @@ select:
 
 			indexFileWrite << index.dump(4) << std::flush;
 
+			std::cout << RED << "\nDeleted\n\n"
+
 			goto rerun;
 		} else if(action == "c") {
 			str delName;
@@ -1324,12 +1326,12 @@ select:
 			getline(std::cin, delName);
 
 			if(delName == "" || delName.back() == ' ' || delName == "saveindex") {
-				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				std::cout << BOLDRED << "Please enter valid name\n\n" << RESET;
 				goto rerun;
 			}
 
 			if(!std::filesystem::exists("save/" + delName + ".json")) {
-				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				std::cout << BOLDRED << "Save does not exist\n\n" << RESET;
 				goto rerun;
 			}
 
@@ -1339,7 +1341,7 @@ select:
 
 			getline(std::cin, cpyTo);
 
-			std::cout << GREEN << "\nCopying...";
+			std::cout << GREEN << "\nCopying...\n\n";
 
 			saveNames.push_back(cpyTo);
 
@@ -1379,12 +1381,12 @@ select:
 			getline(std::cin, delName);
 
 			if(delName == "" || delName.back() == ' ' || delName == "saveindex") {
-				std::cout << BOLDRED << "Please enter valid name\n" << RESET;
+				std::cout << BOLDRED << "Please enter valid name\n\n" << RESET;
 				goto rerun;
 			}
 
 			if(!std::filesystem::exists("save/" + delName + ".json")) {
-				std::cout << BOLDRED << "Save does not exist\n" << RESET;
+				std::cout << BOLDRED << "Save does not exist\n\n" << RESET;
 				goto rerun;
 			}
 
@@ -1394,9 +1396,11 @@ select:
 
 			getline(std::cin, cpyTo);
 
-			std::cout << GREEN << "\nMoving...";
+			std::cout << GREEN << "\nMoving...\n\n";
 
-			*saveNames.find(delName) = cpyTo;
+			saveNames.erase(saveNames.find(delName));
+
+			saveNames.push_back(cpyTo);
 
 			indexFile.close();
 
