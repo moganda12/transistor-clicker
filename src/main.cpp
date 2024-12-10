@@ -189,26 +189,9 @@ str gameName;
 
 #pragma endregion
 
-#pragma region misc
 
-str tolower(str s) {
-	str ret = "";
-	for(int i = 0; i < s.length(); i++) {
-		ret += tolower(s[i]);
-	}
-	return ret;
-}
 
-void clearTempGameState() {
-	triggers.clear();
-	upgrades.clear();
-	acheivements.clear();
 
-	upgradeIndex.clear();
-	acheivementIndex.clear();
-}
-
-#pragma endregion
 
 #pragma region number stuff
 
@@ -231,6 +214,60 @@ number pow(number base, integer exponent) {
 	}
 	result.canonicalize();
 	return result;
+}
+
+str numString(number x, str thing, str plural = "s", integer precision = 0, str colA = BOLDGREEN, str colB = BOLDBLUE) {
+	std::stringstream result;
+
+	str numStr = GRP::toString(x, precision);
+
+	thing.append(numStr == "1" ? "" : plural);
+
+	result << colA << numStr << ' ' << colB << thing;
+
+	return result.str();
+}
+
+number expandPrice(number price, integer count) {
+	return price * pow(expantionFactor, count);
+}
+
+str TransitorsString(number transistors, integer precision = 0, str colA = BOLDGREEN, str colB = BOLDBLUE) {
+	return numString(transistors, "transistor", "s", precision, colA, colB);
+}
+
+#pragma endregion
+
+
+
+
+
+#pragma region misc
+
+void increaseTransistors(number by) {
+	gameState.transistorBalance += by;
+	gameState.totalTransistors += by;
+}
+
+str tolower(str s) {
+	str ret = "";
+	for(int i = 0; i < s.length(); i++) {
+		ret += tolower(s[i]);
+	}
+	return ret;
+}
+
+void clearTempGameState() {
+	triggers.clear();
+	upgrades.clear();
+	acheivements.clear();
+
+	upgradeIndex.clear();
+	acheivementIndex.clear();
+}
+
+void printTitileCard() {
+	std::cout << BOLDBLUE << name << ' ' << BOLDGREEN << version << RESET << "\n\n\n";
 }
 
 #pragma endregion
@@ -271,6 +308,88 @@ size_t getAcheivementByHandle(str handle) {
 
 
 
+#pragma region yeild calc
+
+number calcCursorYeild() {
+	number yeild = cursorYeild;
+
+	for(Upgrade& upgrade : cursorUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	return yeild;
+}
+
+number calcMossYeild() {
+	number yeild = mossYeild;
+
+	for(Upgrade& upgrade : mossUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	return yeild;
+}
+
+number calcSmallFABYeild() {
+	number yeild = smallFABYeild;
+
+	for(Upgrade& upgrade : smallFABUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	for(Upgrade& upgrade : mediumFABUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	for(Upgrade& upgrade : largeFABUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	return yeild;
+}
+
+number calcMediumFABYeild() {
+	number yeild = mediumFABYeild;
+
+	for(Upgrade& upgrade : mediumFABUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	for(Upgrade& upgrade : largeFABUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	return yeild;
+}
+
+number calcLargeFABYeild() {
+	number yeild = largeFABYeild;
+
+	for(Upgrade& upgrade : largeFABUpgrades) {
+		if(upgrade.purchased) yeild *= 2;
+	}
+
+	return yeild;
+}
+
+number calcTPS() {
+	number TPS = 0;
+	TPS += calcCursorYeild() * gameState.cusors;
+	TPS += calcMossYeild() * gameState.moss;
+	TPS += calcSmallFABYeild() * gameState.smallFABs;
+	TPS += calcMediumFABYeild() * gameState.mediumFABs;
+	TPS += calcLargeFABYeild() * gameState.largeFABs;
+
+	return TPS;
+}
+
+#pragma endregion
+
+
+
+
+
+#pragma region engine stuff
 
 void addTrigger(Trigger trigger) {
 	triggers.push_back(trigger);
@@ -284,36 +403,23 @@ void testTriggers(std::vector<str> args) {
 	}
 }
 
-number expandPrice(number price, integer count) {
-	return price * pow(expantionFactor, count);
+void onTick() {
+	number TPS = calcTPS();
+	increaseTransistors(TPS / 16);
+	testTriggers(CMD::arguments);
 }
 
-void printTitileCard() {
-	std::cout << BOLDBLUE << name << ' ' << BOLDGREEN << version << RESET << "\n\n\n";
+void onExit(std::vector<str>&) {
+	std::cout << BOLDRED << "Exiting Human Controll Console...\n";
+	CMD::log("Terminating...");
 }
 
-void clear(std::vector<str>&) {
-	int bung = system("clear");
-	printTitileCard();
-}
-
-str numString(number x, str thing, str plural = "s", integer precision = 0, str colA = BOLDGREEN, str colB = BOLDBLUE) {
-	std::stringstream result;
-
-	str numStr = GRP::toString(x, precision);
-
-	thing.append(numStr == "1" ? "" : plural);
-
-	result << colA << numStr << ' ' << colB << thing;
-
-	return result.str();
-}
+#pragma endregion
 
 
 
-str TransitorsString(number transistors, integer precision = 0, str colA = BOLDGREEN, str colB = BOLDBLUE) {
-	return numString(transistors, "transistor", "s", precision, colA, colB);
-}
+
+
 
 #pragma region THE WALL
 
@@ -355,11 +461,6 @@ bool isMediumFABUnLocked(std::vector<str>& args) {
 
 bool isLargeFABUnLocked(std::vector<str>& args) {
 	return gameState.totalTransistors > largeFABPrice;
-}
-
-void increaseTransistors(number by) {
-	gameState.transistorBalance += by;
-	gameState.totalTransistors += by;
 }
 
 bool canUnLockIntegratedMouse(std::vector<str>& args) {
@@ -444,6 +545,12 @@ void unLockEndgame(std::vector<str>& args) {
 }
 
 #pragma endregion
+
+
+
+
+
+#pragma region saves
 
 integer json_read_integer_safe(json::value_type j, integer def = 0) {
 	if(j.is_null()) {
@@ -542,89 +649,8 @@ void loadGame(str fname) {
 	}
 }
 
-number calcCursorYeild() {
-	number yeild = cursorYeild;
+#pragma endregion
 
-	for(Upgrade& upgrade : cursorUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	return yeild;
-}
-
-number calcMossYeild() {
-	number yeild = mossYeild;
-
-	for(Upgrade& upgrade : mossUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	return yeild;
-}
-
-number calcSmallFABYeild() {
-	number yeild = smallFABYeild;
-
-	for(Upgrade& upgrade : smallFABUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	for(Upgrade& upgrade : mediumFABUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	for(Upgrade& upgrade : largeFABUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	return yeild;
-}
-
-number calcMediumFABYeild() {
-	number yeild = mediumFABYeild;
-
-	for(Upgrade& upgrade : mediumFABUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	for(Upgrade& upgrade : largeFABUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	return yeild;
-}
-
-number calcLargeFABYeild() {
-	number yeild = largeFABYeild;
-
-	for(Upgrade& upgrade : largeFABUpgrades) {
-		if(upgrade.purchased) yeild *= 2;
-	}
-
-	return yeild;
-}
-
-number calcTPS() {
-	number TPS = 0;
-	TPS += calcCursorYeild() * gameState.cusors;
-	TPS += calcMossYeild() * gameState.moss;
-	TPS += calcSmallFABYeild() * gameState.smallFABs;
-	TPS += calcMediumFABYeild() * gameState.mediumFABs;
-	TPS += calcLargeFABYeild() * gameState.largeFABs;
-
-	return TPS;
-}
-
-void onTick() {
-	number TPS = calcTPS();
-	increaseTransistors(TPS / 16);
-	testTriggers(CMD::arguments);
-}
-
-void onExit(std::vector<str>&) {
-	std::cout << BOLDRED << "Exiting Human Controll Console...\n";
-	CMD::log("Terminating...");
-}
 
 number calcClickYeild() {
 	number yeild = 1;
@@ -644,6 +670,11 @@ void click() {
 }
 
 #pragma region commands
+
+void clear(std::vector<str>&) {
+	int bung = system("clear");
+	printTitileCard();
+}
 
 void balance(std::vector<str>& args) {
 	CMD::log("Ran \"balance\" command");
@@ -1304,7 +1335,7 @@ select:
 
 			indexFileWrite << index.dump(4) << std::flush;
 
-			std::cout << RED << "\nDeleted\n\n"
+			std::cout << RED << "\nDeleted\n\n";
 
 			goto rerun;
 		} else if(action == "c") {
