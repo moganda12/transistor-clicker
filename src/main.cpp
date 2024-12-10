@@ -1168,9 +1168,14 @@ int main() {
 	
 	bool exited = false;
 
+	bool skipped = false;
+
 	while(!exited) {
 
+		if(!skipped) 
 		std::cout << BOLDBLUE << name << ' ' << BOLDGREEN << version << RESET << "\n\n";
+
+		skipped = true;
 
 		str action;
 
@@ -1187,7 +1192,7 @@ int main() {
 
 		getline(std::cin, action);
 
-		if(action == "n") {
+			   if(action == "n") {
 			gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
 
 naming:
@@ -1221,7 +1226,7 @@ naming:
 			indexFileWrite << index.dump(4) << std::flush;
 
 			std::cout << index.dump(4);
-		} else if (action == "l") {
+		} else if(action == "l") {
 			std::ifstream indexFile("save/saveindex.json");
 			json index = json::parse(indexFile);
 
@@ -1471,11 +1476,12 @@ select:
 
 		CMD::kill(gameThread);
 
-		//
+		clearTempGameState();
 
 		}
+		skipped = false;
 rerun:
-	int useless = 0;
+		int useless = 0;
 	}
 
 	return 0;

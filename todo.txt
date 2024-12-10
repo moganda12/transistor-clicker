@@ -1,25 +1,29 @@
-TODOLIST
+# TODOLIST
 
 0.0.2 [ ]
 
-[x] refactoring {
+[ ] refactoring {
 
- - [x] move the upgrade and acheivement lists out of save
- - [x] rename save to something better
- - [x] redo the list command
+    - [x] move the upgrade and acheivement lists out of save
+    - [x] rename save to something better
+    - [x] redo the list command
+    - [ ] section off code into regions
 }
 
-[ ] make intermideate interface {
+[x] make main menu {
+
     - [x] make game restart on termination
-    - [x] add game intermideate interface
+    - [x] add the meat
     - [x] remove load command
     - [x] index saves
-    - [ ] add save renaming and copy
+    - [x] add save renaming and copy
 }
 
 [ ] acheivements {
 
- - [x] add interface functions
- - [ ] add getcheck triggers
- - [ ] add display subcommands
+    - [x] add interface functions
+    - [ ] add display subcommands
+    - [ ] add test acheivment and test
+    - [ ] add the rest
+    - [ ] make acheivements save
 }
