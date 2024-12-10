@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 - triggers
 - building unlocking
+- upgrades
+- game saving & loading
+- main menu
 
 ## [0.0.1_2] 2024-08-07
 

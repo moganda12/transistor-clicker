@@ -1335,7 +1335,11 @@ select:
 
 			str cpyTo;
 
+			std::cout << RESET << "\nSave destination: ";
+
 			getline(std::cin, cpyTo);
+
+			std::cout << GREEN << "\nCopying...";
 
 			saveNames.push_back(cpyTo);
 
@@ -1356,7 +1360,7 @@ select:
 			indexFileWrite << index.dump(4) << std::flush;
 
 			goto rerun; 
-		} else if(action == "c") {
+		} else if(action == "m") {
 			str delName;
 
 			std::ifstream indexFile("save/saveindex.json");
@@ -1386,7 +1390,11 @@ select:
 
 			str cpyTo;
 
+			std::cout << RESET << "\nSave destination: ";
+
 			getline(std::cin, cpyTo);
+
+			std::cout << GREEN << "\nMoving...";
 
 			*saveNames.find(delName) = cpyTo;
 
@@ -1413,7 +1421,7 @@ select:
 			break;
 			exited = true;
 		} else {
-			std::cout << BOLDRED << "\nInvalid action!";
+			std::cout << BOLDRED << "\nInvalid action!\n";
 			std::this_thread::sleep_for(std::chrono::seconds(10));
 			goto rerun;
 		}
