@@ -396,9 +396,15 @@ void addTrigger(Trigger trigger) {
 }
 
 void testTriggers(std::vector<str> args) {
-	for(Trigger trigger : triggers) {
+	for(int i = 0; i < triggers.size(); i++) {
+		Trigger trigger = triggers[i];
+		
 		if(trigger.condition(args)) {
 			trigger.result(args);
+
+			if(trigger.selfdelete) {
+				triggers.erase(triggers.begin() + i);
+			}
 		}
 	}
 }

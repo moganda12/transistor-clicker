@@ -2,28 +2,28 @@
     "achievements": null,
     "buildings": {
         "cursor": {
-            "count": "1"
+            "count": "5"
         },
         "largeFAB": {
             "count": "0"
         },
         "mediumFAB": {
-            "count": "1"
+            "count": "0"
         },
         "moss": {
-            "count": "23"
+            "count": "4"
         },
         "smallFAB": {
-            "count": "13"
+            "count": "0"
         }
     },
     "totalTransistors": {
-        "denominator": "160",
-        "numerator": "12504161"
+        "denominator": "4",
+        "numerator": "7053"
     },
     "transistorBalance": {
-        "denominator": "167772160000000000000000000000",
-        "numerator": "221320933749281854631612254981359"
+        "denominator": "32000",
+        "numerator": "34008857"
     },
     "upgrades": {
         "cheap lithography machines": {
@@ -39,19 +39,19 @@
             "bought": false
         },
         "faster fingers": {
-            "bought": true
+            "bought": false
         },
         "integrated mouse": {
             "bought": true
         },
         "moss walls": {
-            "bought": true
+            "bought": false
         },
         "mossier tech": {
             "bought": false
         },
         "mossy mossy": {
-            "bought": true
+            "bought": false
         }
     }
 }
