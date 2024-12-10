@@ -8,6 +8,8 @@
 #include "./lib/GRP.hpp"
 #include "./lib/json.hpp"
 
+#pragma region definitions
+
 #define RESET   "\033[0m"       /* Reset */
 #define BLACK   "\033[30m"      /* Black */
 #define RED     "\033[31m"      /* Red */
@@ -40,6 +42,14 @@ std::hash<str> hasher;
 long hash(str s) {
 	return hasher(s);
 }
+
+#pragma endregion
+
+
+
+
+
+#pragma region structs & classes
 
 enum Buildings {
     cursor = -5238174239041902407,
@@ -104,6 +114,10 @@ public:
 		return upgradeIndices.size();
 	}
 
+	void clear() {
+		upgradeIndices.clear();
+	}
+
 class Iterator {
 private:
     size_t index;
@@ -134,20 +148,19 @@ public:
 	}
 };
 
-
-str tolower(str s) {
-	str ret = "";
-	for(int i = 0; i < s.length(); i++) {
-		ret += tolower(s[i]);
-	}
-	return ret;
-}
-
 struct Trigger {
     CMD::Condition condition;
     CMD::Result result;
     bool selfdelete = true;
 };
+
+#pragma endregion
+
+
+
+
+
+#pragma region variables
 
 std::vector<Trigger> triggers;
 
@@ -174,6 +187,31 @@ UpgradeGroup largeFABUpgrades(&upgrades);
 
 str gameName;
 
+#pragma endregion
+
+#pragma region misc
+
+str tolower(str s) {
+	str ret = "";
+	for(int i = 0; i < s.length(); i++) {
+		ret += tolower(s[i]);
+	}
+	return ret;
+}
+
+void clearTempGameState() {
+	triggers.clear();
+	upgrades.clear();
+	acheivements.clear();
+
+	upgradeIndex.clear();
+	acheivementIndex.clear();
+}
+
+#pragma endregion
+
+#pragma region number stuff
+
 integer getrationalnumerator(number n) {
 	return integer(n.get_num_mpz_t());
 }
@@ -181,6 +219,27 @@ integer getrationalnumerator(number n) {
 integer getrationaldenominator(number n) {
 	return integer(n.get_den_mpz_t());
 }
+
+integer toInt(number x) {
+	return integer(x);
+}
+
+number pow(number base, integer exponent) {
+	number result = 1;
+	for(integer i = 0; i < exponent; i++) {
+		result *= base;
+	}
+	result.canonicalize();
+	return result;
+}
+
+#pragma endregion
+
+
+
+
+
+#pragma region upgrade & achievment schtuff
 
 void createUpgrade(str Uname, str description, str effect, str flavortext, number cost) {
 	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false});
@@ -206,18 +265,12 @@ size_t getAcheivementByHandle(str handle) {
 	return acheivementIndex[handle];
 }
 
-integer toInt(number x) {
-	return integer(x);
-}
+#pragma endregion
 
-number pow(number base, integer exponent) {
-	number result = 1;
-	for(integer i = 0; i < exponent; i++) {
-		result *= base;
-	}
-	result.canonicalize();
-	return result;
-}
+
+
+
+
 
 void addTrigger(Trigger trigger) {
 	triggers.push_back(trigger);
@@ -261,6 +314,8 @@ str numString(number x, str thing, str plural = "s", integer precision = 0, str 
 str TransitorsString(number transistors, integer precision = 0, str colA = BOLDGREEN, str colB = BOLDBLUE) {
 	return numString(transistors, "transistor", "s", precision, colA, colB);
 }
+
+#pragma region THE WALL
 
 void unlockCursor(std::vector<str>& args) {
 	gameState.cursorUnlocked = true;
@@ -387,6 +442,8 @@ void unLockEndgame(std::vector<str>& args) {
 	Upgrade& Endgame = upgrades[getUpgradeByName("endgame")];
 	Endgame.unlocked = true;
 }
+
+#pragma endregion
 
 integer json_read_integer_safe(json::value_type j, integer def = 0) {
 	if(j.is_null()) {
@@ -585,6 +642,8 @@ void click() {
 	gameState.clicks++;
 	std::cout << BOLDWHITE << "Click! " << BOLDBLUE << "You made " << TransitorsString(clickValue) << RESET << '\n';
 }
+
+#pragma region commands
 
 void balance(std::vector<str>& args) {
 	CMD::log("Ran \"balance\" command");
@@ -1102,6 +1161,8 @@ void bHash(std::vector<str>& args) {
 	}
 }
 
+#pragma endregion
+
 int main() {
 	GRP::init();
 	
@@ -1322,9 +1383,7 @@ select:
 
 			getline(std::cin, cpyTo);
 
-			uint64_t nameIndex = saveNames.find(delName);
-
-			saveNames[nameIndex] = cpyTo;
+			*saveNames.find(delName) = cpyTo;
 
 			indexFile.close();
 
@@ -1411,6 +1470,9 @@ select:
 		CMD::command_loop(click);
 
 		CMD::kill(gameThread);
+
+		//
+
 		}
 rerun:
 	int useless = 0;
