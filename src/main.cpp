@@ -1146,7 +1146,7 @@ void list(std::vector<str>& args) {
 
 					for(Upgrade& upgrade : owned) {
 						std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << "(owned)\n";
-						std::cout << "will cost " << TransitorsString(upgrade.cost) << "!\n\n";
+						std::cout << BOLDBLUE << "will cost " << TransitorsString(upgrade.cost) << "!\n\n";
 					}
 
 					for(Upgrade& upgrade : unlocked) {
