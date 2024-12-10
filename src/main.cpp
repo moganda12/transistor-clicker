@@ -298,8 +298,8 @@ size_t getUpgradeByName(str Uname) {
 	return upgradeIndex[tolower(Uname)];
 }
 
-size_t getAcheivementByHandle(str handle) {
-	return acheivementIndex[handle];
+size_t getAcheivementByName(str Aname) {
+	return acheivementIndex[tolower(Aname)];
 }
 
 #pragma endregion
@@ -628,6 +628,13 @@ void saveGame(str fname) {
 	for(Upgrade& upgrade : upgrades) {
 		json& upgradeJson = upgradesJson[upgrade.name];
 		upgradeJson["bought"] = upgrade.purchased;
+	}
+
+	json& acheivementsJson = saveData["achievements"];
+
+	for(Acheivement& acheivement : acheivements) {
+		json& acheivementJson = acheivementsJson[acheivement.name];
+		acheivementJson["earned"] = acheivement.earned;
 	}
 
 	std::remove(fname.c_str());
@@ -1014,11 +1021,40 @@ void info(std::vector<str>& args) {
 			}
 			
 			std::cout << BOLDWHITE << "UPGRADE: " << upgrade.name << '\n';
-			std::cout << BOLDCYAN << "Description:\n";
-			std::cout << RESET << upgrade.description << '\n';
-			std::cout << BOLDCYAN << "Effect:\n";
-			std::cout << RESET << upgrade.effect << "\n\n";
+			std::cout << BOLDCYAN  << "Description:\n";
+			std::cout << RESET     << upgrade.description << '\n';
+			std::cout << BOLDCYAN  << "Effect:\n";
+			std::cout << RESET     << upgrade.effect << "\n\n";
 			std::cout << BOLDWHITE << '"' << upgrade.flavortext << "\"\n";
+		} else if(args[0] == "achievment") {
+			str Aname = "";
+
+			for(size_t i = 1; i < args.size(); i++) {
+				Aname += args[i];
+				if(i != args.size() - 1) Aname += " ";
+			}
+
+			if(acheivementIndex.find(tolower(Aname)) == acheivementIndex.end()) {
+				std::cout << BOLDRED << "Unkown acheivement";
+				return;
+			}
+
+			Acheivement& acheivement = acheivements[getAcheivementByName(Aname)];
+
+			if(Aname == "All you had to do was ask") {
+				std::cout << "You found me!\n\n";
+				acheivement.earned = true;
+			}
+
+			if(!acheivement.earned) {
+				std::cout << RED << "What!?! You haven't earned this, SCRAM!";
+				return;
+			}
+
+			std::cout << BOLDWHITE << "ACHIEVEMENT: "  << acheivement.name << '\n';
+			std::cout << BOLDCYAN  << "Description: \n";
+			std::cout << RESET     << acheivement.description << "\n\n";
+			std::cout << BOLDWHITE << '"' << acheivement.flavortext << "\"\n";
 		}
 	}
 }
@@ -1084,14 +1120,15 @@ void help(std::vector<str>& args) {
 			std::cout << RESET << "help [command]\n";
 		} else if(args[0] == "info") {
 			std::cout << BOLDWHITE << "INFO\n";
-			std::cout << RESET << "Shows qualitative information about things in the game\n";
-			std::cout << BOLDCYAN << "\nUsage:\n";
-			std::cout << RESET << "info [thing]\n";
-			std::cout << BOLDCYAN << "\nThings:\n";
-			std::cout << RESET << "Inummerable\n";
-			std::cout << BOLDCYAN << "Subcommands:\n";
-			std::cout << BOLDBLUE << "buildings" << RESET << " - Shows info about selected building\n";
-			std::cout << BOLDBLUE << "upgrades" << RESET << " - Shows info about selected upgrade\n";
+			std::cout << RESET     << "Shows qualitative information about things in the game\n";
+			std::cout << BOLDCYAN  << "\nUsage:\n";
+			std::cout << RESET     << "info [thing]\n";
+			std::cout << BOLDCYAN  << "\nThings:\n";
+			std::cout << RESET     << "Inummerable\n";
+			std::cout << BOLDCYAN  << "Subcommands:\n";
+			std::cout << BOLDBLUE  << "building"    << RESET << " - Shows info about selected building\n";
+			std::cout << BOLDBLUE  << "upgrade"     << RESET << " - Shows info about selected upgrade\n";
+			std::cout << BOLDBLUE  << "achievement" << RESET << " - Shows info about selected achievement\n";
 		} 
 		#ifdef DEBUG 
 		else if(args[0] == "bHash") {
@@ -1247,6 +1284,22 @@ int main() {
 		std::cout << "Action: ";
 
 		getline(std::cin, action);
+
+		#pragma region this is why you test thoroughly
+
+		createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades);
+		createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades);
+		createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades);
+
+		createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades);
+		createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades);
+
+		createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades);
+		createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades);
+
+		createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades);
+
+				createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades);
 
 			   if(action == "n") {
 			gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
@@ -1502,31 +1555,17 @@ select:
 		CMD::addcommand("bHash", bHash);
 		#endif
 
-		createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades);
-		createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades);
-		createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades);
-
 		addTrigger({canUnLockIntegratedMouse, unLockIntegratedMouse});
 		addTrigger({canUnLockFastFing, unLockFastFing});
 		addTrigger({canUnLockChippy, unLockChippy});
-
-		createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades);
-		createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades);
 	
 		addTrigger({canUnLockMossyMossy, unLockMossyMossy});
 		addTrigger({canUnLockMossWalls, unLockMossWalls});
 
-		createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades);
-		createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades);
-
 		addTrigger({canUnLockCheapMachines, unLockCheapMachines});
 		addTrigger({canUnLockDenseChips, unLockDenseChips});
 
-		createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades);
-
 		addTrigger({canUnLockMossyTech, unLockMossyTech});
-
-		createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades);
 
 		addTrigger({canUnLockEndgame, unLockEndgame});
 
