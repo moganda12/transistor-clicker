@@ -619,6 +619,38 @@ bool canUnLockAutoClick(std::vector<str>& args) {
 	return gameState.cusors >= 1;
 }
 
+bool canUnLockDoubleClick(std::vector<str>& args) {
+	return gameState.cusors >= 2;
+}
+
+bool canUnLockMouseWheel(std::vector<str>& args) {
+	return gameState.cusors >= 50;
+}
+
+bool canUnLockMossy(std::vector<str>& args) {
+	return gameState.moss >= 1;
+}
+
+bool canUnLockMossGardens(std::vector<str>& args) {
+	return gameState.moss >= 50;
+}
+
+bool canUnLockFABrication(std::vector<str>& args) {
+	return gameState.smallFABs >= 1;
+}
+
+bool canUnLockDatamining(std::vector<str>& args) {
+	return gameState.mediumFABs >= 1;
+}
+
+bool canUnLockThatsBig(std::vector<str>& args) {
+	return gameState.largeFABs >= 1;
+}
+
+bool canUnLockFinal(std::vector<str>& args) {
+	return upgrades[getUpgradeByName("endgame")].purchased;
+}
+
 void unLockClick(std::vector<str>& args) {
 	unlockAchievement("click");
 }
@@ -645,6 +677,38 @@ void unLockSteadyStream(std::vector<str>& args) {
 
 void unLockAutoClick(std::vector<str>& args) {
 	unlockAchievement("autoclick");
+}
+
+void unLockDoubleClick(std::vector<str>& args) {
+	unlockAchievement("double click");
+}
+
+void unLockMouseWheel(std::vector<str>& args) {
+	unlockAchievement("mouse wheel");
+}
+
+void unLockMossy(std::vector<str>& args) {
+	unlockAchievement("mossy");
+}
+
+void unLockMossGardens(std::vector<str>& args) {
+	unlockAchievement("moss gardens");
+}
+
+void unLockFABrication(std::vector<str>& args) {
+	unlockAchievement("fabrication");
+}
+
+void unLockDatamining(std::vector<str>& args) {
+	unlockAchievement("datamining");
+}
+
+void unLockThatsBig(std::vector<str>& args) {
+	unlockAchievement("that's big");
+}
+
+void unLockFinal(std::vector<str>& args) {
+	unlockAchievement("???");
 }
 
 #pragma endregion
@@ -1141,6 +1205,10 @@ void info(std::vector<str>& args)    {
 				return;
 			}
 
+			if(achievement.name == "fabrication") {
+				achievement.name = "FABrication";
+			}
+
 			std::cout << BOLDWHITE << "ACHIEVEMENT: "  << achievement.name << '\n';
 			std::cout << BOLDCYAN  << "Description: \n";
 			std::cout << RESET     << achievement.description << "\n\n";
@@ -1288,6 +1356,10 @@ void list(std::vector<str>& args)    {
 				std::cout << BOLDWHITE << "Acheivments:";
 
 				for(Achievement& achievement : achievements) {
+					if(achievement.name == "fabrication") {
+						achievement.name = "FABrication";
+					}
+
 					std::cout << BOLDBLUE << achievement.name << " - " << achievement.description << '\n';
 					std::cout << BOLDBLUE << '"' << achievement.flavortext << "\"\n\n";
 				}
@@ -1358,29 +1430,50 @@ int main() {
 
 	bool skipped = false;
 
-	createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades, {canUnLockIntegratedMouse, unLockIntegratedMouse});
-	createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades, {canUnLockFastFing, unLockFastFing});
-	createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades, {canUnLockChippy, unLockChippy});
+	createUpgrade("integrated mouse", "The mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades, {canUnLockIntegratedMouse, unLockIntegratedMouse});
+	createUpgrade("faster fingers", "Makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades, {canUnLockFastFing, unLockFastFing});
+	createUpgrade("chippy", "An assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades, {canUnLockChippy, unLockChippy});
 
 	createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades, {canUnLockMossyMossy, unLockMossyMossy});
 	createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades, {canUnLockMossWalls, unLockMossWalls});
 
-	createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades, {canUnLockCheapMachines, unLockCheapMachines});
-	createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades, {canUnLockDenseChips, unLockDenseChips});
+	createUpgrade("cheap lithography machines", "Makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades, {canUnLockCheapMachines, unLockCheapMachines});
+	createUpgrade("denser chips", "More transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades, {canUnLockDenseChips, unLockDenseChips});
 
-	createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades, {canUnLockMossyTech, unLockMossyTech});
+	createUpgrade("mossier tech", "Includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades, {canUnLockMossyTech, unLockMossyTech});
 
-	createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades, {canUnLockEndgame, unLockEndgame});
+	createUpgrade("endgame", "The game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades, {canUnLockEndgame, unLockEndgame});
 
-	createAchievement("click", "press enter without entering a command", "clack", {canUnLockClick, unLockClick});
-	createAchievement("semigood", "earn 1,000 transistors", "kinda yummy", {canUnLockSemigood, unLockSemigood});
-	createAchievement("transistant", "earn 100,000 transistors", "I'm trancen-I mean transisting", {canUnLockTransistant, unLockTransistant});
+	createAchievement("click", "Press enter without entering a command", "clack", {canUnLockClick, unLockClick});
+	createAchievement("semigood", "Earn 1,000 transistors", "kinda yummy", {canUnLockSemigood, unLockSemigood});
+	createAchievement("transistant", "Earn 100,000 transistors", "I'm trancen-I mean transisting", {canUnLockTransistant, unLockTransistant});
 
-	createAchievement("casual semiconductors", "make 1 transistor a second", "YOY!", {canUnLockCasualSemi, unLockCasualSemi});
-	createAchievement("hardcore semiconductors", "make 10 transistors per second", "Unachievable!", {canUnLockHarcoreSemi, unLockHarcoreSemi});
-	createAchievement("steady semistream", "make 100 transistors per second", "Truly unachievable!", {canUnLockSteadyStream, unLockSteadyStream});
+	createAchievement("casual semiconductors", "Make 1 transistor a second", "YOY!", {canUnLockCasualSemi, unLockCasualSemi});
+	createAchievement("hardcore semiconductors", "Make 10 transistors per second", "Unachievable!", {canUnLockHarcoreSemi, unLockHarcoreSemi});
+	createAchievement("steady semistream", "Make 100 transistors per second", "Truly unachievable!", {canUnLockSteadyStream, unLockSteadyStream});
 
-	createAchievement("all you had to do was ask", "really", "ask and you shall acheive!", {alwayTrue, duZNutin});
+	createAchievement("autoclick", "Own 1 cursor", "autoclack", {canUnLockAutoClick, unLockAutoClick});
+	createAchievement("double click", "Own 2 cursors", "click clock", {canUnLockDoubleClick, unLockDoubleClick});
+	createAchievement("mouse wheel", "Own 50 cursors", "spin, oops I forgot!", {canUnLockMouseWheel, unLockMouseWheel});
+
+	createAchievement("mossy", "Own 1 moss", "Mossy M-Ooops spoilers!", {canUnLockMossy, unLockMossy});
+	createAchievement("moss gardens", "Own 50 moss", "but moss needs more MORE MOSS!", {canUnLockMossGardens, unLockMossGardens});
+
+	createAchievement("fabrication", "Own 1 small FAB", "FABulous!", {canUnLockFABrication, unLockFABrication});
+
+	#ifdef DEBUG
+	str dataMineEnd = "I'll try the datamine command, maybe I get it easy with my debug build";
+	#else
+	str dataMineEnd = "shucks I have only have a release build";
+	#endif
+
+	createAchievement("datamining", "Own 1 medium FAB", "hmmmmm, is it javascrpt.datamine(), oh wait, this is C++ " + dataMineEnd, {canUnLockDatamining, unLockDatamining});
+
+	createAchievement("that's big", "Own 1 large FAB", "your big, NERD!", {canUnLockThatsBig, unLockThatsBig});
+
+	createAchievement("all you had to do was ask", "really that's all", "ask and you shall acheive!", {alwayTrue, duZNutin});
+
+	createAchievement("???", "???", "??? You know it gets bad when the flavortext is \"???\"", {canUnLockFinal, unLockFinal});
 
 	while(!exited) {
 
