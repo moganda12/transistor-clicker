@@ -1278,6 +1278,14 @@ void help(std::vector<str>& args)    {
 			std::cout << RESET << "Shows help for commands, if none is specified then gives help on all commands\n";
 			std::cout << BOLDCYAN << "\nUsage:\n";
 			std::cout << RESET << "help [command]\n";
+		} else if(args[0] == "list") {
+			std::cout << BOLDWHITE << "LIST\n";
+			std::cout << RESET << "Lists things, if none is specified then it tells you it can't list noting\n";
+			std::cout << BOLDCYAN << "\nUsage:\n";
+			std::cout << RESET << "list [thing]\n";
+			std::cout << BOLDCYAN << "\nThings:\n";
+			std::cout << BOLDBLUE << "building" << RESET << " - lists buildings";
+			std::cout << BOLDBLUE << "upgrade" << RESET << " - lists upgrades";
 		} else if(args[0] == "info") {
 			std::cout << BOLDWHITE << "INFO\n";
 			std::cout << RESET     << "Shows qualitative information about things in the game\n";
@@ -1360,9 +1368,11 @@ void list(std::vector<str>& args)    {
 					if(achievement.name == "fabrication") {
 						achievement.name = "FABrication";
 					}
-
-					std::cout << BOLDBLUE << achievement.name << " - " << achievement.description << '\n';
-					std::cout << BOLDBLUE << '"' << achievement.flavortext << "\"\n\n";
+					
+					if(achievement.earned) {
+						std::cout << BOLDBLUE << achievement.name << " - " << achievement.description << '\n';
+						std::cout << BOLDWHITE << '"' << achievement.flavortext << "\"\n\n";
+					}
 				}
 			}
 		} else if(args[0] == "building" || args[0] == "buildings") {
