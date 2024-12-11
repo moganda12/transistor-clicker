@@ -1256,7 +1256,6 @@ void help(std::vector<str>& args)    {
 				}
 			}
 		} else if(args[0] == "buy") {
-			{
 			std::cout << BOLDWHITE << "BUY\n";
 			std::cout << RESET << "Buy the specified item, if count is empty it will buy 1, if count is max it will buy the maximum ammount\n";
 			std::cout << BOLDCYAN << "\nUsage:\n";
@@ -1267,7 +1266,6 @@ void help(std::vector<str>& args)    {
 			std::cout << BOLDBLUE << "smallFAB" << RESET << " - buy a small FAB\n";
 			std::cout << BOLDBLUE << "mediumFAB" << RESET << " - buy a medium FAB\n";
 			std::cout << BOLDBLUE << "largeFAB" << RESET << " - buy a large FAB\n";
-			}
 		} else if(args[0] == "clear") {
 			std::cout << BOLDWHITE << "CLEAR\n";
 			std::cout << RESET << "Clears the console, then prints title card\n";
@@ -1279,13 +1277,25 @@ void help(std::vector<str>& args)    {
 			std::cout << BOLDCYAN << "\nUsage:\n";
 			std::cout << RESET << "help [command]\n";
 		} else if(args[0] == "list") {
+			if(args.size() == 1) {
 			std::cout << BOLDWHITE << "LIST\n";
 			std::cout << RESET << "Lists things, if none is specified then it tells you it can't list noting\n";
 			std::cout << BOLDCYAN << "\nUsage:\n";
 			std::cout << RESET << "list [thing]\n";
 			std::cout << BOLDCYAN << "\nThings:\n";
-			std::cout << BOLDBLUE << "building" << RESET << " - lists buildings";
-			std::cout << BOLDBLUE << "upgrade" << RESET << " - lists upgrades";
+			std::cout << BOLDBLUE << "building" << RESET << " - lists buildings\n";
+			std::cout << BOLDBLUE << "achievement" << RESET << " - lists achievements\n";
+			std::cout << BOLDCYAN << "Subcommands:\n";
+			std::cout << BOLDBLUE << "upgrade | upgrades" << RESET << " - lists owned upgrades\n";
+			} else if(args.size() >= 2) {
+				if(args[1] == "upgrade" || args[1] == "upgrades") {
+					std::cout << BOLDWHITE << "LIST UPGRADES\n";
+					std::cout << RESET << "Lists upgrades\n";
+					std::cout << BOLDCYAN << "\nThings:\n";
+					std::cout << BOLDBLUE << "all" << RESET << " - lists all upgrades\n";
+					std::cout << BOLDBLUE << "owned" << RESET << " - lists owned upgrades\n";
+				}
+			}
 		} else if(args[0] == "info") {
 			std::cout << BOLDWHITE << "INFO\n";
 			std::cout << RESET     << "Shows qualitative information about things in the game\n";
@@ -1528,7 +1538,7 @@ naming:
 			}
 
 			std::ofstream save("save/" + gameName + ".json");
-			save << " ";
+			save << "{}";
 
 			std::ifstream indexFile("save/saveindex.json");
 
@@ -1544,8 +1554,13 @@ naming:
 
 			std::cout << index.dump(4);
 		} else if(action == "l") {
-			std::ifstream indexFile("save/saveindex.json");
-			json index = json::parse(indexFile);
+			json index;
+			if(std::filesystem::exists("save/saveindex.json")) {
+				std::ifstream indexFile("save/saveindex.json");
+				index = json::parse(indexFile);
+			} else {
+				index = json::parse("{}");
+			}
 
 select:
 			std::cout << BOLDYELLOW << "\nSaves:\n";
@@ -1574,8 +1589,13 @@ select:
 		} else if(action == "d") {
 			str delName;
 
-			std::ifstream indexFile("save/saveindex.json");
-			json index = json::parse(indexFile);
+			json index;
+		   if(std::filesystem::exists("save/saveindex.json")) {
+			   std::ifstream indexFile("save/saveindex.json");
+			   index = json::parse(indexFile);
+		   } else {
+				index = json::parse("{}");
+		   }
 
 			std::cout << BOLDYELLOW << "\nSaves:\n";
 
@@ -1613,8 +1633,6 @@ select:
 
 			saveNames.erase(saveNames.find(delName));
 
-			indexFile.close();
-
 			std::remove("save/saveindex.json");
 
 			std::ofstream indexFileWrite("save/saveindex.json");
@@ -1627,8 +1645,13 @@ select:
 		} else if(action == "c") {
 			str delName;
 
-			std::ifstream indexFile("save/saveindex.json");
-			json index = json::parse(indexFile);
+			json index;
+		    if(std::filesystem::exists("save/saveindex.json")) {
+				std::ifstream indexFile("save/saveindex.json");
+			    index = json::parse(indexFile);
+		    } else {
+				index = json::parse("{}");
+		    }
 
 			std::cout << BOLDYELLOW << "\nSaves:\n";
 
@@ -1662,8 +1685,6 @@ select:
 
 			saveNames.push_back(cpyTo);
 
-			indexFile.close();
-
 			std::ifstream src("save/" + delName + ".json", std::ios::binary);
     		std::ofstream dst("save/" + cpyTo   + ".json", std::ios::binary);
 
@@ -1682,8 +1703,13 @@ select:
 		} else if(action == "m") {
 			str delName;
 
-			std::ifstream indexFile("save/saveindex.json");
-			json index = json::parse(indexFile);
+			json index;
+		    if(std::filesystem::exists("save/saveindex.json")) {
+				std::ifstream indexFile("save/saveindex.json");
+			    index = json::parse(indexFile);
+		    } else {
+				index = json::parse("{}");
+		    }
 
 			std::cout << BOLDYELLOW << "\nSaves:\n";
 
@@ -1718,8 +1744,6 @@ select:
 			saveNames.erase(saveNames.find(delName));
 
 			saveNames.push_back(cpyTo);
-
-			indexFile.close();
 
 			std::ifstream src("save/" + delName + ".json", std::ios::binary);
     		std::ofstream dst("save/" + cpyTo   + ".json", std::ios::binary);
