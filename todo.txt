@@ -24,9 +24,9 @@
 [ ] acheivements {
 
     - [x] add interface functions
-    - [ ] add display subcommands
-    - [ ] add test acheivment and test
+    - [x] add display subcommands
+    - [x] add test acheivment and test
     - [ ] add the rest
-    - [ ] make acheivements save
+    - [x] make acheivements save
 }
 

@@ -62,6 +62,12 @@ enum Buildings {
     oaktree = 6580827420282859339
 };
 
+struct Trigger {
+    CMD::Condition condition;
+    CMD::Result result;
+    bool selfdelete = true;
+};
+
 struct Upgrade {
     str name;
     str description;
@@ -70,13 +76,15 @@ struct Upgrade {
     number cost;
     bool unlocked;
     bool purchased;
+	Trigger unlockTrigger;
 };
 
-struct Acheivement {
+struct Achievement {
     str name;
     str description;
     str flavortext;
     bool earned;
+	Trigger unlockTrigger;
 };
 
 struct TclickerState {
@@ -148,12 +156,6 @@ public:
 	}
 };
 
-struct Trigger {
-    CMD::Condition condition;
-    CMD::Result result;
-    bool selfdelete = true;
-};
-
 #pragma endregion
 
 
@@ -165,10 +167,10 @@ struct Trigger {
 std::vector<Trigger> triggers;
 
 std::vector<Upgrade> upgrades;
-std::vector<Acheivement> acheivements;
+std::vector<Achievement> achievements;
 
 std::unordered_map<str, size_t> upgradeIndex;
-std::unordered_map<str, size_t> acheivementIndex;
+std::unordered_map<str, size_t> achievementIndex;
 
 TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
 
@@ -178,6 +180,7 @@ const str version = "0.0.2 DevBuild 2.3";
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABPrice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = number(1, 10), mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
 const number expantionFactor = number(23, 20);
+number tPSCache = 0;
 
 UpgradeGroup cursorUpgrades(&upgrades);
 UpgradeGroup mossUpgrades(&upgrades);
@@ -257,49 +260,8 @@ str tolower(str s) {
 	return ret;
 }
 
-void clearTempGameState() {
-	triggers.clear();
-	upgrades.clear();
-	acheivements.clear();
-
-	upgradeIndex.clear();
-	acheivementIndex.clear();
-}
-
 void printTitileCard() {
 	std::cout << BOLDBLUE << name << ' ' << BOLDGREEN << version << RESET << "\n\n\n";
-}
-
-#pragma endregion
-
-
-
-
-
-#pragma region upgrade & achievment schtuff
-
-void createUpgrade(str Uname, str description, str effect, str flavortext, number cost) {
-	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false});
-	upgradeIndex[Uname] = upgrades.size() - 1;
-}
-
-void createUpgrade(str Uname, str description, str effect, str flavortext, number cost, UpgradeGroup& group) {
-	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false});
-	upgradeIndex[Uname] = upgrades.size() - 1;
-	group.append(upgradeIndex[Uname]);
-}
-
-void createAcheivement(str achName, str description, str flavortext) {
-	acheivements.push_back({achName, description, flavortext, false});
-	acheivementIndex[achName] = acheivements.size() - 1;
-}
-
-size_t getUpgradeByName(str Uname) {
-	return upgradeIndex[tolower(Uname)];
-}
-
-size_t getAcheivementByName(str Aname) {
-	return acheivementIndex[tolower(Aname)];
 }
 
 #pragma endregion
@@ -411,6 +373,7 @@ void testTriggers(std::vector<str> args) {
 
 void onTick() {
 	number TPS = calcTPS();
+	tPSCache = TPS;
 	increaseTransistors(TPS / 16);
 	testTriggers(CMD::arguments);
 }
@@ -426,8 +389,72 @@ void onExit(std::vector<str>&) {
 
 
 
+#pragma region upgrade & achievment schtuff
+
+void createUpgrade(str Uname, str description, str effect, str flavortext, number cost, Trigger unlockTrigger) {
+	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false, unlockTrigger});
+	upgradeIndex[Uname] = upgrades.size() - 1;
+}
+
+void createUpgrade(str Uname, str description, str effect, str flavortext, number cost, UpgradeGroup& group, Trigger unlockTrigger) {
+	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false, unlockTrigger});
+	upgradeIndex[Uname] = upgrades.size() - 1;
+	group.append(upgradeIndex[Uname]);
+}
+
+void createAchievement(str achName, str description, str flavortext, Trigger unlockTrigger) {
+	achievements.push_back({achName, description, flavortext, false, unlockTrigger});
+	achievementIndex[achName] = achievements.size() - 1;
+}
+
+size_t getUpgradeByName(str Uname) {
+	return upgradeIndex[tolower(Uname)];
+}
+
+size_t getAchievementByName(str Aname) {
+	return achievementIndex[tolower(Aname)];
+}
+
+void addUpgradeTriggers() {
+	for(Upgrade& upgrade : upgrades) {
+		if(!upgrade.unlocked) {
+			addTrigger(upgrade.unlockTrigger);
+		}
+	}
+}
+
+void addAchievementTriggers() {
+	for(Achievement& achievement : achievements) {
+		if(!achievement.earned) {
+			addTrigger(achievement.unlockTrigger);
+		}
+	}
+}
+
+void unlockAchievement(str name) {
+	achievements[getAchievementByName(name)].earned = true;
+}
+
+#pragma endregion
+
+
+
+
 
 #pragma region THE WALL
+
+
+
+
+
+bool alwayTrue(std::vector<str>& args) {
+	return true;
+}
+
+void duZNutin(std::vector<str>& args) {
+	//it really doez
+}
+
 
 
 
@@ -562,7 +589,64 @@ void unLockEndgame(std::vector<str>& args) {
 
 
 
-#pragma region for acheivements
+#pragma region for achievements
+
+bool canUnLockClick(std::vector<str>& args) {
+	return gameState.totalTransistors >= 1;
+}
+
+bool canUnLockSemigood(std::vector<str>& args) {
+	return gameState.totalTransistors >= 1'000;
+}
+
+bool canUnLockTransistant(std::vector<str>& args) {
+	return gameState.totalTransistors >= 100'000;
+}
+
+bool canUnLockCasualSemi(std::vector<str>& args) {
+	return tPSCache >= 1;
+}
+
+bool canUnLockHarcoreSemi(std::vector<str>& args) {
+	return tPSCache >= 10;
+}
+
+bool canUnLockSteadyStream(std::vector<str>& args) {
+	return tPSCache >= 100;
+}
+
+bool canUnLockAutoClick(std::vector<str>& args) {
+	return gameState.cusors >= 1;
+}
+
+void unLockClick(std::vector<str>& args) {
+	unlockAchievement("click");
+}
+
+void unLockSemigood(std::vector<str>& args) {
+	unlockAchievement("semigood");
+}
+
+void unLockTransistant(std::vector<str>& args) {
+	unlockAchievement("transistant");
+}
+
+void unLockCasualSemi(std::vector<str>& args) {
+	unlockAchievement("casual semiconductors");
+}
+
+void unLockHarcoreSemi(std::vector<str>& args) {
+	unlockAchievement("hardcore semiconductors");
+}
+
+void unLockSteadyStream(std::vector<str>& args) {
+	unlockAchievement("steady semistream");
+}
+
+void unLockAutoClick(std::vector<str>& args) {
+	unlockAchievement("autoclick");
+}
+
 #pragma endregion
 
 
@@ -636,11 +720,11 @@ void saveGame(str fname) {
 		upgradeJson["bought"] = upgrade.purchased;
 	}
 
-	json& acheivementsJson = saveData["achievements"];
+	json& achievementsJson = saveData["achievements"];
 
-	for(Acheivement& acheivement : acheivements) {
-		json& acheivementJson = acheivementsJson[acheivement.name];
-		acheivementJson["earned"] = acheivement.earned;
+	for(Achievement& achievement : achievements) {
+		json& achievementJson = achievementsJson[achievement.name];
+		achievementJson["earned"] = achievement.earned;
 	}
 
 	std::remove(fname.c_str());
@@ -700,7 +784,7 @@ void click() {
 
 #pragma region commands
 
-void clear(std::vector<str>&) {
+void clear(std::vector<str>& args)   {
 	int bung = system("clear");
 	printTitileCard();
 }
@@ -793,7 +877,7 @@ void balance(std::vector<str>& args) {
 	CMD::log("They have " + TransitorsString(gameState.transistorBalance, 0, "", "") + "!");
 }
 
-void buy(std::vector<str>& args) {
+void buy(std::vector<str>& args)     {
 	if(args.size() > 1) {
 		if(args[0] == "upgrade") {
 			str Uname = "";
@@ -944,7 +1028,7 @@ void buy(std::vector<str>& args) {
 	}
 }
 
-void info(std::vector<str>& args) {
+void info(std::vector<str>& args)    {
 	if(args.size() < 1) {
 		std::cout << BOLDRED << "You must specify somthing to be informed about!\n";
 		return;
@@ -1032,7 +1116,7 @@ void info(std::vector<str>& args) {
 			std::cout << BOLDCYAN  << "Effect:\n";
 			std::cout << RESET     << upgrade.effect << "\n\n";
 			std::cout << BOLDWHITE << '"' << upgrade.flavortext << "\"\n";
-		} else if(args[0] == "achievment") {
+		} else if(args[0] == "achievement") {
 			str Aname = "";
 
 			for(size_t i = 1; i < args.size(); i++) {
@@ -1040,41 +1124,42 @@ void info(std::vector<str>& args) {
 				if(i != args.size() - 1) Aname += " ";
 			}
 
-			if(acheivementIndex.find(tolower(Aname)) == acheivementIndex.end()) {
-				std::cout << BOLDRED << "Unkown acheivement";
+			if(achievementIndex.find(tolower(Aname)) == achievementIndex.end()) {
+				std::cout << BOLDRED << "Unkown achievement";
 				return;
 			}
 
-			Acheivement& acheivement = acheivements[getAcheivementByName(Aname)];
+			Achievement& achievement = achievements[getAchievementByName(Aname)];
 
-			if(Aname == "All you had to do was ask") {
+			if(tolower(Aname) == "all you had to do was ask") {
 				std::cout << "You found me!\n\n";
-				acheivement.earned = true;
+				achievement.earned = true;
 			}
 
-			if(!acheivement.earned) {
+			if(!achievement.earned) {
 				std::cout << RED << "What!?! You haven't earned this, SCRAM!";
 				return;
 			}
 
-			std::cout << BOLDWHITE << "ACHIEVEMENT: "  << acheivement.name << '\n';
+			std::cout << BOLDWHITE << "ACHIEVEMENT: "  << achievement.name << '\n';
 			std::cout << BOLDCYAN  << "Description: \n";
-			std::cout << RESET     << acheivement.description << "\n\n";
-			std::cout << BOLDWHITE << '"' << acheivement.flavortext << "\"\n";
+			std::cout << RESET     << achievement.description << "\n\n";
+			std::cout << BOLDWHITE << '"' << achievement.flavortext << "\"\n";
 		}
 	}
 }
 
-void help(std::vector<str>& args) {
+void help(std::vector<str>& args)    {
 	if(args.size() < 1) {
 		std::cout << BOLDBLUE << "Commands:\n";
 		std::cout << BOLDBLUE << "balance " << RESET << " - Shows info about your transistor balance\n";
 		std::cout << BOLDBLUE << "buy     " << RESET << " - Buys the selected item\n";
 		std::cout << BOLDBLUE << "clear   " << RESET << " - Clears the console\n";
 		std::cout << BOLDBLUE << "help    " << RESET << " - Gives assistance\n";
+		std::cout << BOLDBLUE << "list    " << RESET << " - Lists things\n";
 		std::cout << BOLDBLUE << "save    " << RESET << " - Saves game\n";
 		#ifdef DEBUG
-		std::cout << BOLDBLUE << "bHash" << RESET << " - Lists building hashes\n";
+		std::cout << BOLDBLUE << "bHash   " << RESET << " - Lists building hashes\n";
 		#endif
 	} else if(args.size() >= 1) {
 		if(args[0] == "balance") {
@@ -1147,7 +1232,7 @@ void help(std::vector<str>& args) {
 	}
 }
 
-void list(std::vector<str>& args) {
+void list(std::vector<str>& args)    {
 	if(args.size() < 1) {
 		std::cout << BOLDRED << "You must specify some group of things to list!\n";
 	} else if(args.size() >= 1) {
@@ -1167,7 +1252,7 @@ void list(std::vector<str>& args) {
 
 					for(Upgrade& upgrade : upgrades) {
 						if(upgrade.purchased) {
-							std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << "(owned)\n";
+							std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << " (owned)\n";
 							std::cout << BOLDBLUE << "cost " << TransitorsString(upgrade.cost, 0) << "!\n\n";
 						}
 					}
@@ -1188,7 +1273,7 @@ void list(std::vector<str>& args) {
 					}
 
 					for(Upgrade& upgrade : owned) {
-						std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << "(owned)\n";
+						std::cout << BOLDBLUE << upgrade.name << " - " << upgrade.description << BOLDYELLOW << " (owned)\n";
 						std::cout << BOLDBLUE << "will cost " << TransitorsString(upgrade.cost) << "!\n\n";
 					}
 
@@ -1198,13 +1283,13 @@ void list(std::vector<str>& args) {
 					}
 				}
 			}
-		} else if(args[0] == "acheivement" || args[0] == "acheivements") {
+		} else if(args[0] == "achievement" || args[0] == "achievements") {
 			if(args.size() >= 1) {
 				std::cout << BOLDWHITE << "Acheivments:";
 
-				for(Acheivement& acheivement : acheivements) {
-					std::cout << BOLDBLUE << acheivement.name << " - " << acheivement.description << '\n';
-					std::cout << BOLDBLUE << '"' << acheivement.flavortext << "\"\n\n";
+				for(Achievement& achievement : achievements) {
+					std::cout << BOLDBLUE << achievement.name << " - " << achievement.description << '\n';
+					std::cout << BOLDBLUE << '"' << achievement.flavortext << "\"\n\n";
 				}
 			}
 		} else if(args[0] == "building" || args[0] == "buildings") {
@@ -1238,7 +1323,7 @@ void list(std::vector<str>& args) {
 	}
 }
 
-void save(std::vector<str>& args) {
+void save(std::vector<str>& args)    {
 	if(gameName == "") {
 		std::cout << BOLDRED << "This is invalid state, HACKER!";
 	}
@@ -1250,6 +1335,8 @@ void save(std::vector<str>& args) {
 	std::cout << BOLDGREEN << "Done!\n";
 }
 
+#ifdef DEBUG
+
 void bHash(std::vector<str>& args) {
 	str buildings[] = {"cursor", "moss", "smallFAB", "mediumFAB", "largeFAB", "i860", "startup", "oaktree"};
 
@@ -1260,6 +1347,8 @@ void bHash(std::vector<str>& args) {
 	}
 }
 
+#endif
+
 #pragma endregion
 
 int main() {
@@ -1268,6 +1357,30 @@ int main() {
 	bool exited = false;
 
 	bool skipped = false;
+
+	createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades, {canUnLockIntegratedMouse, unLockIntegratedMouse});
+	createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades, {canUnLockFastFing, unLockFastFing});
+	createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades, {canUnLockChippy, unLockChippy});
+
+	createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades, {canUnLockMossyMossy, unLockMossyMossy});
+	createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades, {canUnLockMossWalls, unLockMossWalls});
+
+	createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades, {canUnLockCheapMachines, unLockCheapMachines});
+	createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades, {canUnLockDenseChips, unLockDenseChips});
+
+	createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades, {canUnLockMossyTech, unLockMossyTech});
+
+	createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades, {canUnLockEndgame, unLockEndgame});
+
+	createAchievement("click", "press enter without entering a command", "clack", {canUnLockClick, unLockClick});
+	createAchievement("semigood", "earn 1,000 transistors", "kinda yummy", {canUnLockSemigood, unLockSemigood});
+	createAchievement("transistant", "earn 100,000 transistors", "I'm trancen-I mean transisting", {canUnLockTransistant, unLockTransistant});
+
+	createAchievement("casual semiconductors", "make 1 transistor a second", "YOY!", {canUnLockCasualSemi, unLockCasualSemi});
+	createAchievement("hardcore semiconductors", "make 10 transistors per second", "Unachievable!", {canUnLockHarcoreSemi, unLockHarcoreSemi});
+	createAchievement("steady semistream", "make 100 transistors per second", "Truly unachievable!", {canUnLockSteadyStream, unLockSteadyStream});
+
+	createAchievement("all you had to do was ask", "really", "ask and you shall acheive!", {alwayTrue, duZNutin});
 
 	while(!exited) {
 
@@ -1290,22 +1403,6 @@ int main() {
 		std::cout << "Action: ";
 
 		getline(std::cin, action);
-
-		#pragma region this is why you test thoroughly
-
-		createUpgrade("integrated mouse", "the mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades);
-		createUpgrade("faster fingers", "makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades);
-		createUpgrade("chippy", "an assistant to improve your clicking methods.", "doubles mouse and cursor output.", "do you want to click a button? how about writing a letter instead.", 10'000, cursorUpgrades);
-
-		createUpgrade("mossy mossy", "Boosts moss production... somehow.", "doubles moss output.", "Mossy Mossy", 1'000, mossUpgrades);
-		createUpgrade("moss walls", "Add moss walls to the office space", "doubles moss output.", "Add moss walls to the halls so the moss has more space to grow.", 5'000, mossUpgrades);
-
-		createUpgrade("cheap lithography machines", "makes small FABs better!", "doubles small FAB output", "Cheaper lithography machines make small FABs more cost effective.", 10'000, smallFABUpgrades);
-		createUpgrade("denser chips", "more transistors fit on the same chip!", "doubles small FAB output.", "All new chipmaking process doubles chip density and performance!", 50'000, smallFABUpgrades);
-
-		createUpgrade("mossier tech", "includes moss in microchips.", "doubles small & meduim FAB output", "Whitness the pure power of all new MOSS transistors", 110'000, mediumFABUpgrades);
-
-				createUpgrade("endgame", "the game is complete...\n\nfor now", "doubles all FABs output", "huh I thought there'd be more", 200'000, largeFABUpgrades);
 
 			   if(action == "n") {
 			gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
@@ -1561,19 +1658,8 @@ select:
 		CMD::addcommand("bHash", bHash);
 		#endif
 
-		addTrigger({canUnLockIntegratedMouse, unLockIntegratedMouse});
-		addTrigger({canUnLockFastFing, unLockFastFing});
-		addTrigger({canUnLockChippy, unLockChippy});
-	
-		addTrigger({canUnLockMossyMossy, unLockMossyMossy});
-		addTrigger({canUnLockMossWalls, unLockMossWalls});
-
-		addTrigger({canUnLockCheapMachines, unLockCheapMachines});
-		addTrigger({canUnLockDenseChips, unLockDenseChips});
-
-		addTrigger({canUnLockMossyTech, unLockMossyTech});
-
-		addTrigger({canUnLockEndgame, unLockEndgame});
+		addUpgradeTriggers();
+		addAchievementTriggers();
 
 		addTrigger({isCursorUnLocked, unlockCursor});
 		addTrigger({isMossUnLocked, unlockMoss});
@@ -1589,7 +1675,7 @@ select:
 
 		CMD::kill(gameThread);
 
-		clearTempGameState();
+		triggers.clear();
 
 		}
 		skipped = false;
