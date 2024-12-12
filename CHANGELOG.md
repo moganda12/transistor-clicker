@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
-## [Unreleased]
+## [0.0.2_1]
+
+### fixed
+
+- list command would list all achievements, not just ones that you've earned
+- crash when attempting to load empty save
+- crash when attempting to accsess save index when it was empty
+
+## [0.0.2] 2024-12-11
 
 ### added
 
