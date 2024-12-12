@@ -1,41 +1,91 @@
 {
+    "achievements": {
+        "???": {
+            "earned": true
+        },
+        "FABrication": {
+            "earned": true
+        },
+        "all you had to do was ask": {
+            "earned": false
+        },
+        "autoclick": {
+            "earned": true
+        },
+        "casual semiconductors": {
+            "earned": true
+        },
+        "click": {
+            "earned": true
+        },
+        "datamining": {
+            "earned": true
+        },
+        "double click": {
+            "earned": false
+        },
+        "hardcore semiconductors": {
+            "earned": true
+        },
+        "moss gardens": {
+            "earned": false
+        },
+        "mossy": {
+            "earned": true
+        },
+        "mouse wheel": {
+            "earned": false
+        },
+        "semigood": {
+            "earned": true
+        },
+        "steady semistream": {
+            "earned": true
+        },
+        "that's big": {
+            "earned": true
+        },
+        "transistant": {
+            "earned": true
+        }
+    },
     "buildings": {
         "cursor": {
             "count": "1"
         },
         "largeFAB": {
-            "count": "0"
+            "count": "1"
         },
         "mediumFAB": {
-            "count": "1"
+            "count": "3"
         },
         "moss": {
             "count": "23"
         },
         "smallFAB": {
-            "count": "13"
+            "count": "21"
         }
     },
     "totalTransistors": {
         "denominator": "160",
-        "numerator": "12504161"
+        "numerator": "131105181"
     },
     "transistorBalance": {
         "denominator": "167772160000000000000000000000",
-        "numerator": "221320933749281854631612254981359"
+        "numerator": "19937845723836824549415535544065359"
     },
     "upgrades": {
         "cheap lithography machines": {
-            "bought": false
+            "bought": true
         },
         "chippy": {
             "bought": false
         },
         "denser chips": {
-            "bought": false
+            "bought": true
         },
         "endgame": {
-            "bought": false
+            "bought": true
         },
         "faster fingers": {
             "bought": true
@@ -47,7 +97,7 @@
             "bought": true
         },
         "mossier tech": {
-            "bought": false
+            "bought": true
         },
         "mossy mossy": {
             "bought": true
