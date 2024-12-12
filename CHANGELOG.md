@@ -6,11 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [0.0.2_1]
 
+### added
+
+- help entry for list command
+
 ### fixed
 
 - list command would list all achievements, not just ones that you've earned
 - crash when attempting to load empty save
 - crash when attempting to accsess save index when it was empty
+- that one issue with CMD
 
 ## [0.0.2] 2024-12-11
 

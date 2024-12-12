@@ -100,6 +100,11 @@ struct TclickerState {
     //bool i860Unlocked, startupUnlocked, oakTreeUnlocked;
 };
 
+struct Notification {
+	str title;
+	str content;
+};
+
 class UpgradeGroup {
 private:
     std::vector<size_t> upgradeIndices;
@@ -168,6 +173,7 @@ std::vector<Trigger> triggers;
 
 std::vector<Upgrade> upgrades;
 std::vector<Achievement> achievements;
+std::vector<Notification> notifications;
 
 std::unordered_map<str, size_t> upgradeIndex;
 std::unordered_map<str, size_t> achievementIndex;
@@ -175,7 +181,7 @@ std::unordered_map<str, size_t> achievementIndex;
 TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
 
 const str name = "Transistor Clicker";
-const str version = "0.0.2";
+const str version = "0.0.2_2";
 
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABPrice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = number(1, 10), mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
@@ -394,18 +400,18 @@ void onExit(std::vector<str>&) {
 
 void createUpgrade(str Uname, str description, str effect, str flavortext, number cost, Trigger unlockTrigger) {
 	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false, unlockTrigger});
-	upgradeIndex[Uname] = upgrades.size() - 1;
+	upgradeIndex[tolower(Uname)] = upgrades.size() - 1;
 }
 
 void createUpgrade(str Uname, str description, str effect, str flavortext, number cost, UpgradeGroup& group, Trigger unlockTrigger) {
 	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false, unlockTrigger});
-	upgradeIndex[Uname] = upgrades.size() - 1;
+	upgradeIndex[tolower(Uname)] = upgrades.size() - 1;
 	group.append(upgradeIndex[Uname]);
 }
 
 void createAchievement(str achName, str description, str flavortext, Trigger unlockTrigger) {
 	achievements.push_back({achName, description, flavortext, false, unlockTrigger});
-	achievementIndex[achName] = achievements.size() - 1;
+	achievementIndex[tolower(achName)] = achievements.size() - 1;
 }
 
 size_t getUpgradeByName(str Uname) {
@@ -434,6 +440,7 @@ void addAchievementTriggers() {
 
 void unlockAchievement(str name) {
 	achievements[getAchievementByName(name)].earned = true;
+	notifications.push_back({"Achievement unlocked!", achievements[getAchievementByName(name)].name});
 }
 
 #pragma endregion
@@ -783,6 +790,7 @@ void saveGame(str fname) {
 	for(Upgrade& upgrade : upgrades) {
 		json& upgradeJson = upgradesJson[upgrade.name];
 		upgradeJson["bought"] = upgrade.purchased;
+		upgradeJson["unlocked"] = upgrade.unlocked;
 	}
 
 	json& achievementsJson = saveData["achievements"];
@@ -824,6 +832,14 @@ void loadGame(str fname) {
 	for(Upgrade& upgrade : upgrades) {
 		json& upgradeJson = upgradesJson[upgrade.name];
 		upgrade.purchased = json_bool_nullcheck(upgradeJson["bought"]);
+		upgrade.unlocked  = json_bool_nullcheck(upgradeJson["unlocked"]);
+	}
+
+	json& achievementsJson = saveData["achievements"];
+
+	for(Achievement& achievement : achievements) {
+		json& achievementJson = achievementsJson[achievement.name];
+		achievement.earned = json_bool_nullcheck(achievementJson["earned"]);
 	}
 }
 
@@ -1122,12 +1138,12 @@ void info(std::vector<str>& args)    {
 				std::cout << BOLDCYAN << "Description:\n";
 				std::cout << RESET << "Autoclicks once every 10 seconds\n";
 				std::cout << BOLDCYAN << "Effect:\n";
-				std::cout << RESET << "Makes " << TransitorsString(calcClickYeild(), 0, "", "") << " every ten seconds\n\n";
+				std::cout << RESET << "Makes " << TransitorsString(calcCursorYeild() * 10, 0, "", "") << " every ten seconds\n\n";
 				std::cout << BOLDWHITE << "\"A nice cusor for your nice mouse\"\n";
 			} else if(args[1] == "moss") {
 				std::cout << BOLDWHITE << "MOSS\n";
 				std::cout << BOLDCYAN << "Description:\n";
-				std::cout << RESET << "Some moss to... somthing more transistors";
+				std::cout << RESET << "Some moss to... somthing more transistors\n";
 				std::cout << BOLDCYAN << "Effect:\n";
 				std::cout << RESET << "Makes " << TransitorsString(calcMossYeild(), 0, "", "") << " every second\n\n";
 				std::cout << BOLDWHITE << "\"Some nice moss to uh..... cookies\"\n";
@@ -1373,7 +1389,7 @@ void list(std::vector<str>& args)    {
 			}
 		} else if(args[0] == "achievement" || args[0] == "achievements") {
 			if(args.size() >= 1) {
-				std::cout << BOLDWHITE << "Acheivments:";
+				std::cout << BOLDWHITE << "Achievments:\n\n";
 
 				for(Achievement& achievement : achievements) {
 					if(achievement.name == "fabrication") {
@@ -1415,6 +1431,15 @@ void list(std::vector<str>& args)    {
 			}
 		}
 	}
+}
+
+void notes(std::vector<str>& args)   {
+	for(Notification notification : notifications) {
+		std::cout << BOLDYELLOW << notification.title <<     '\n';
+		std::cout << BOLDWHITE  << notification.content << "\n\n";
+	}
+
+	notifications.clear();
 }
 
 void save(std::vector<str>& args)    {
@@ -1481,7 +1506,7 @@ int main() {
 	createAchievement("mossy", "Own 1 moss", "Mossy M-Ooops spoilers!", {canUnLockMossy, unLockMossy});
 	createAchievement("moss gardens", "Own 50 moss", "but moss needs more MORE MOSS!", {canUnLockMossGardens, unLockMossGardens});
 
-	createAchievement("fabrication", "Own 1 small FAB", "FABulous!", {canUnLockFABrication, unLockFABrication});
+	createAchievement("FABrication", "Own 1 small FAB", "FABulous!", {canUnLockFABrication, unLockFABrication});
 
 	#ifdef DEBUG
 	str dataMineEnd = "I'll try the datamine command, maybe I get it easy with my debug build";
@@ -1778,12 +1803,13 @@ select:
 		CMD::exit = onExit;
 
 		CMD::addcommand("balance", balance);
-		CMD::addcommand("buy", buy);
-		CMD::addcommand("clear", clear);
-		CMD::addcommand("help", help);
-		CMD::addcommand("info", info);
-		CMD::addcommand("list", list);
-		CMD::addcommand("save", save);
+		CMD::addcommand("buy"    , buy    );
+		CMD::addcommand("clear"  , clear  );
+		CMD::addcommand("help"   , help   );
+		CMD::addcommand("info"   , info   );
+		CMD::addcommand("list"   , list   );
+		CMD::addcommand("notes"  , notes  );
+		CMD::addcommand("save"   , save   );
 		#ifdef DEBUG
 		CMD::addcommand("bHash", bHash);
 		#endif

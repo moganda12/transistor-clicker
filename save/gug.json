@@ -1,56 +1,115 @@
 {
+    "achievements": {
+        "???": {
+            "earned": false
+        },
+        "FABrication": {
+            "earned": true
+        },
+        "all you had to do was ask": {
+            "earned": true
+        },
+        "autoclick": {
+            "earned": true
+        },
+        "casual semiconductors": {
+            "earned": true
+        },
+        "click": {
+            "earned": true
+        },
+        "datamining": {
+            "earned": true
+        },
+        "double click": {
+            "earned": true
+        },
+        "hardcore semiconductors": {
+            "earned": true
+        },
+        "moss gardens": {
+            "earned": false
+        },
+        "mossy": {
+            "earned": true
+        },
+        "mouse wheel": {
+            "earned": false
+        },
+        "semigood": {
+            "earned": true
+        },
+        "steady semistream": {
+            "earned": true
+        },
+        "that's big": {
+            "earned": false
+        },
+        "transistant": {
+            "earned": true
+        }
+    },
     "buildings": {
         "cursor": {
-            "count": "5"
+            "count": "10"
         },
         "largeFAB": {
             "count": "0"
         },
         "mediumFAB": {
-            "count": "0"
+            "count": "2"
         },
         "moss": {
-            "count": "4"
+            "count": "20"
         },
         "smallFAB": {
-            "count": "0"
+            "count": "8"
         }
     },
     "totalTransistors": {
-        "denominator": "4",
-        "numerator": "7053"
+        "denominator": "1",
+        "numerator": "238110"
     },
     "transistorBalance": {
-        "denominator": "32000",
-        "numerator": "34008857"
+        "denominator": "52428800000000000000000",
+        "numerator": "8467793557737581608500346933"
     },
     "upgrades": {
         "cheap lithography machines": {
-            "bought": false
+            "bought": true,
+            "unlocked": true
         },
         "chippy": {
-            "bought": false
+            "bought": true,
+            "unlocked": true
         },
         "denser chips": {
-            "bought": false
+            "bought": false,
+            "unlocked": true
         },
         "endgame": {
-            "bought": false
+            "bought": false,
+            "unlocked": false
         },
         "faster fingers": {
-            "bought": false
+            "bought": true,
+            "unlocked": true
         },
         "integrated mouse": {
-            "bought": true
+            "bought": true,
+            "unlocked": true
         },
         "moss walls": {
-            "bought": false
+            "bought": true,
+            "unlocked": true
         },
         "mossier tech": {
-            "bought": false
+            "bought": false,
+            "unlocked": true
         },
         "mossy mossy": {
-            "bought": false
+            "bought": true,
+            "unlocked": true
         }
     }
 }
