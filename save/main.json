@@ -3,9 +3,6 @@
         "???": {
             "earned": true
         },
-        "FABrication": {
-            "earned": true
-        },
         "all you had to do was ask": {
             "earned": false
         },
@@ -23,6 +20,9 @@
         },
         "double click": {
             "earned": false
+        },
+        "fabrication": {
+            "earned": true
         },
         "hardcore semiconductors": {
             "earned": true
@@ -54,7 +54,7 @@
             "count": "1"
         },
         "largeFAB": {
-            "count": "1"
+            "count": "2"
         },
         "mediumFAB": {
             "count": "3"
@@ -68,11 +68,11 @@
     },
     "totalTransistors": {
         "denominator": "160",
-        "numerator": "131105181"
+        "numerator": "320132813"
     },
     "transistorBalance": {
         "denominator": "167772160000000000000000000000",
-        "numerator": "19937845723836824549415535544065359"
+        "numerator": "187528425915068824549415535544065359"
     },
     "upgrades": {
         "cheap lithography machines": {

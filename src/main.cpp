@@ -1226,6 +1226,7 @@ void help(std::vector<str>& args)    {
 		std::cout << BOLDBLUE << "clear   " << RESET << " - Clears the console\n";
 		std::cout << BOLDBLUE << "help    " << RESET << " - Gives assistance\n";
 		std::cout << BOLDBLUE << "list    " << RESET << " - Lists things\n";
+		std::cout << BOLDBLUE << "info    " << RESET << " - shows info as selected thing\n";
 		std::cout << BOLDBLUE << "save    " << RESET << " - Saves game\n";
 		#ifdef DEBUG
 		std::cout << BOLDBLUE << "bHash   " << RESET << " - Lists building hashes\n";

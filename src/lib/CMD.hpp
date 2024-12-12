@@ -36,6 +36,9 @@ namespace CMD {
 
     std::unordered_map<str, ScriptFunction> commands;
 
+    std::stringstream beforeComm;
+    std::stringstream afterComm;
+
     bool spam = false;
 
     inline str gettime(::std::time_t time) {
@@ -189,6 +192,7 @@ namespace CMD {
                           // Finally execute the command in the context of the game
                           // engine loop.
                           execute_command(command_copy, ::std::move(arg_copy));
+                          std::cout << std::flush;
                           ticks++;
                       }
                   }
@@ -227,6 +231,8 @@ namespace CMD {
 
     constexpr ::std::chrono::microseconds sixteenth_second{62500};
 
+    std::chrono::microseconds uinterval;
+
     inline ::std::jthread init(
                      str tename,
                      str const &promptstyle,
@@ -235,6 +241,7 @@ namespace CMD {
     ) {
         prgname = tename;
         prompt = promptstyle;
+        uinterval = interval;
         logfile.open("log.txt", std::ios::app);
                      ::std::jthread game_thread{engine_loop, tename, updater, interval};
         logfile << "\n\n\n[" << gettime() << "] : " << name << " initialized\n" << name << " ver " << ver << '\n';
@@ -244,6 +251,7 @@ namespace CMD {
     void command_loop(Onzero onzero = errzero) {
         bool exited = false;
         while(!exited) {
+            std::this_thread::sleep_for(uinterval);
             str command;
                         // Use ::std::flush to make sure prompt appears
                         // before read.
