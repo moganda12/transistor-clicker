@@ -1,6 +1,6 @@
 # TODOLIST
 
-0.0.2 [ ]
+0.0.2 [x]
 
 [x] refactoring {
 
@@ -21,12 +21,12 @@
 
 
 
-[ ] acheivements {
+[x] acheivements {
 
     - [x] add interface functions
     - [x] add display subcommands
     - [x] add test acheivment and test
-    - [ ] add the rest
+    - [x] add the rest
     - [x] make acheivements save
 }
 

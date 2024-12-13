@@ -1242,13 +1242,14 @@ void help(std::vector<str>& args)    {
 		std::cout << BOLDBLUE << "clear   " << RESET << " - Clears the console\n";
 		std::cout << BOLDBLUE << "help    " << RESET << " - Gives assistance\n";
 		std::cout << BOLDBLUE << "list    " << RESET << " - Lists things\n";
-		std::cout << BOLDBLUE << "info    " << RESET << " - shows info as selected thing\n";
+		std::cout << BOLDBLUE << "notes   " << RESET << " - Shows unattended achievements\n";
+		std::cout << BOLDBLUE << "info    " << RESET << " - Shows info as selected thing\n";
 		std::cout << BOLDBLUE << "save    " << RESET << " - Saves game\n";
 		#ifdef DEBUG
 		std::cout << BOLDBLUE << "bHash   " << RESET << " - Lists building hashes\n";
 		#endif
 	} else if(args.size() >= 1) {
-		if(args[0] == "balance") {
+			   if(args[0] == "balance") {
 			if(args.size() == 1) {
 			std::cout << BOLDWHITE << "BALANCE\n";
 			std::cout << RESET << "Show quantitative info about specified thing\n";
@@ -1313,6 +1314,11 @@ void help(std::vector<str>& args)    {
 					std::cout << BOLDBLUE << "owned" << RESET << " - lists owned upgrades\n";
 				}
 			}
+		} else if(args[0] == "notes") {
+			std::cout << BOLDWHITE << "CLEAR\n";
+			std::cout << RESET << "Shows unattended notifications, then clears them\n";
+			std::cout << BOLDCYAN << "\nUsage:\n";
+			std::cout << RESET << "notes\n";
 		} else if(args[0] == "info") {
 			std::cout << BOLDWHITE << "INFO\n";
 			std::cout << RESET     << "Shows qualitative information about things in the game\n";
