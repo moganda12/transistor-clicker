@@ -4,13 +4,13 @@
 
 0.0.3 [ ]
 
-[ ] refactoring buildings {
+[x] refactoring buildings {
     
     - [x] make building struct
     - [x] add building list and index
     - [x] add interface functions
     - [x] have building intialized at start
-    - [ ] rework commands to use new logic
+    - [x] rework commands to use new logic
 }
 
 [ ] land/construction system {}
