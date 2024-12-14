@@ -1,5 +1,20 @@
 # TODOLIST
 
+[ ] 0.1 {
+
+0.0.3 [ ]
+
+[ ] refactoring buildings {
+    
+    - [x] make building struct
+    - [x] add building list and index
+    - [x] add interface functions
+    - [x] have building intialized at start
+    - [ ] rework commands to use new logic
+}
+
+[ ] land/construction system {}
+
 0.0.2 [x]
 
 [x] refactoring {
@@ -19,8 +34,6 @@
     - [x] add save renaming and copy
 }
 
-
-
 [x] acheivements {
 
     - [x] add interface functions
@@ -30,3 +43,4 @@
     - [x] make acheivements save
 }
 
+}

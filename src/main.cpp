@@ -37,6 +37,8 @@ using integer = mpz_class;
 using flat = mpf_class;
 using number = mpq_class;
 
+using yield = number (*)(void);
+
 std::hash<str> hasher;
 
 long hash(str s) {
@@ -50,17 +52,6 @@ long hash(str s) {
 
 
 #pragma region structs & classes
-
-enum Buildings {
-    cursor = -5238174239041902407,
-    moss = 7569504340697116271,
-    smallFAB = -2000947298636880309,
-    mediumFAB = -1712167728928864321,
-    largeFAB = -7940484003211731860,
-    i860 = -3460087220543975172,
-    startup = 9083628158375851998,
-    oaktree = 6580827420282859339
-};
 
 struct Trigger {
     CMD::Condition condition;
@@ -87,6 +78,19 @@ struct Achievement {
 	Trigger unlockTrigger;
 };
 
+struct Building {
+	str name;
+	str description;
+	str flavorText;
+	number basePrice;
+	integer count;
+	bool unlocked;
+	Trigger unlockTrigger;
+	yield calcYield;
+	const str shortand;
+	number priceCache = basePrice;
+};
+
 struct TclickerState {
 	number transistorBalance;
 	number totalTransistors;
@@ -94,7 +98,7 @@ struct TclickerState {
 	number ascentionLevels;
 	number heavenlyMicrochips;*/
 	integer clicks; 
-    integer cusors, moss, smallFABs, mediumFABs, largeFABs;
+    /*integer cusors, moss, smallFABs, mediumFABs, largeFABs;*/
 	//integer i860s, startups, oakTrees;
     bool cursorUnlocked, mossUnlocked, smallFABUnlocked, mediumFABUnlocked, largeFABUnlocked;
     //bool i860Unlocked, startupUnlocked, oakTreeUnlocked;
@@ -173,15 +177,17 @@ std::vector<Trigger> triggers;
 
 std::vector<Upgrade> upgrades;
 std::vector<Achievement> achievements;
+std::vector<Building> buildings;
 std::vector<Notification> notifications;
 
 std::unordered_map<str, size_t> upgradeIndex;
 std::unordered_map<str, size_t> achievementIndex;
+std::unordered_map<str, size_t> buildingIndex;
 
-TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
+TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0};
 
 const str name = "Transistor Clicker";
-const str version = "0.0.2_2";
+const str version = "0.0.3 DevBuild 1";
 
 const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABPrice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = number(1, 10), mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
@@ -258,12 +264,21 @@ void increaseTransistors(number by) {
 	gameState.totalTransistors += by;
 }
 
+/**
+ * @brief Return the lowercase version of S
+ */
 str tolower(str s) {
-	str ret = "";
 	for(int i = 0; i < s.length(); i++) {
-		ret += tolower(s[i]);
+		s[i] = tolower(s[i]);
 	}
-	return ret;
+	return s;
+}
+
+str toupper(str s) {
+	for(int i = 0; i < s.length(); i++) {
+		s[i] = toupper(s[i]);
+	}
+	return s;
 }
 
 void printTitileCard() {
@@ -343,11 +358,10 @@ number calcLargeFABYeild() {
 
 number calcTPS() {
 	number TPS = 0;
-	TPS += calcCursorYeild() * gameState.cusors;
-	TPS += calcMossYeild() * gameState.moss;
-	TPS += calcSmallFABYeild() * gameState.smallFABs;
-	TPS += calcMediumFABYeild() * gameState.mediumFABs;
-	TPS += calcLargeFABYeild() * gameState.largeFABs;
+	
+	for(Building& building : buildings) {
+		TPS += building.calcYield() * building.count;
+	}
 
 	return TPS;
 }
@@ -396,7 +410,7 @@ void onExit(std::vector<str>&) {
 
 
 
-#pragma region upgrade & achievment schtuff
+#pragma region upgrade & achievment & building schtuff
 
 void createUpgrade(str Uname, str description, str effect, str flavortext, number cost, Trigger unlockTrigger) {
 	upgrades.push_back({Uname, description, effect, flavortext, cost, false, false, unlockTrigger});
@@ -414,12 +428,25 @@ void createAchievement(str achName, str description, str flavortext, Trigger unl
 	achievementIndex[tolower(achName)] = achievements.size() - 1;
 }
 
+void createBuilding(str name, str description, str flavorText, number basePrice, Trigger unlockTrigger, yield calcYield, str shorthand) {
+	buildings.push_back({name, description, flavorText, basePrice, 0, false, unlockTrigger, calcYield, tolower(shorthand)});
+	buildingIndex[tolower(shorthand)] = buildings.size() - 1;
+}
+
 size_t getUpgradeByName(str Uname) {
 	return upgradeIndex[tolower(Uname)];
 }
 
 size_t getAchievementByName(str Aname) {
 	return achievementIndex[tolower(Aname)];
+}
+
+size_t getBuildingByShorthand(str shorthand) {
+	return buildingIndex[tolower(shorthand)];
+}
+
+Building GBySH(str shorthand) {
+	return buildings[buildingIndex[tolower(shorthand)]];
 }
 
 void addUpgradeTriggers() {
@@ -438,9 +465,22 @@ void addAchievementTriggers() {
 	}
 }
 
+void addBuildingTriggers() {
+	for(Building& building : buildings) {
+		if(!building.unlocked) {
+			addTrigger(building.unlockTrigger);
+		}
+	}
+}
+
 void unlockAchievement(str name) {
 	achievements[getAchievementByName(name)].earned = true;
 	notifications.push_back({"Achievement unlocked!", achievements[getAchievementByName(name)].name});
+}
+
+void unlockBuilding(str shorthand) {
+	buildings[getBuildingByShorthand(shorthand)].unlocked = true;
+	notifications.push_back({"Building unlocked", buildings[getBuildingByShorthand(shorthand)].name});
 }
 
 #pragma endregion
@@ -467,28 +507,7 @@ void duZNutin(std::vector<str>& args) {
 
 
 
-
-#pragma region for upgrades
-
-void unlockCursor(std::vector<str>& args) {
-	gameState.cursorUnlocked = true;
-}
-
-void unlockMoss(std::vector<str>& args) {
-	gameState.mossUnlocked = true;
-}
-
-void unlockSmallFAB(std::vector<str>& args) {
-    gameState.smallFABUnlocked = true;
-}
-
-void unlockMediumFAB(std::vector<str>& args) {
-	gameState.mediumFABUnlocked = true;
-}
-
-void unlockLargeFAB(std::vector<str>& args) {
-	gameState.largeFABUnlocked = true;
-}
+#pragma region for buildings
 
 bool isCursorUnLocked(std::vector<str>& args) {
 	return gameState.totalTransistors > cursorPrice;
@@ -510,40 +529,67 @@ bool isLargeFABUnLocked(std::vector<str>& args) {
 	return gameState.totalTransistors > largeFABPrice;
 }
 
+void unlockCursor(std::vector<str>& args) {
+	unlockBuilding("cursor");
+}
+
+void unlockMoss(std::vector<str>& args) {
+	unlockBuilding("moss");
+}
+
+void unlockSmallFAB(std::vector<str>& args) {
+    unlockBuilding("smallfab");
+}
+
+void unlockMediumFAB(std::vector<str>& args) {
+	unlockBuilding("mediumfab");
+}
+
+void unlockLargeFAB(std::vector<str>& args) {
+	unlockBuilding("largefab");
+}
+
+#pragma endregion
+
+
+
+
+#pragma region for upgrades
+
 bool canUnLockIntegratedMouse(std::vector<str>& args) {
-	return gameState.cusors >= 1;
+	return GBySH("cursor").count >= 1;
 }
 
 bool canUnLockFastFing(std::vector<str>& args) {
-	return gameState.cusors >= 1;
+	return GBySH("cursor").count >= 1;
 }
 
 bool canUnLockChippy(std::vector<str>& args) {
-	return gameState.cusors >= 10;
+	return GBySH("cursor").count >= 10;
 }
 
 bool canUnLockMossyMossy(std::vector<str>& args) {
-	return gameState.moss >= 1;
+	return GBySH("moss").count >= 1;
 }
 
 bool canUnLockMossWalls(std::vector<str>& args) {
-	return gameState.moss >= 5;
+	return GBySH("moss").count >= 5;
 }
 
 bool canUnLockCheapMachines(std::vector<str>& args) {
-	return gameState.smallFABs >= 1;
+	return GBySH("smallfab").count >= 1;
 }
 
 bool canUnLockDenseChips(std::vector<str>& args) {
-	return gameState.smallFABs >= 5;
+	return GBySH("smallfab").count >= 5;
 }
 
 bool canUnLockMossyTech(std::vector<str>& args) {
-	return gameState.mediumFABs >= 1;
+	return GBySH("mediumfab").count >= 1;
 }
 
 bool canUnLockEndgame(std::vector<str>& args) {
-	return gameState.largeFABs >= 1;
+	return GBySH("largefab").count >= 1;
 }
 
 void unLockIntegratedMouse(std::vector<str>& args) {
@@ -624,35 +670,35 @@ bool canUnLockSteadyStream(std::vector<str>& args) {
 }
 
 bool canUnLockAutoClick(std::vector<str>& args) {
-	return gameState.cusors >= 1;
+	return GBySH("cursor").count >= 1;
 }
 
 bool canUnLockDoubleClick(std::vector<str>& args) {
-	return gameState.cusors >= 2;
+	return GBySH("cursor").count >= 2;
 }
 
 bool canUnLockMouseWheel(std::vector<str>& args) {
-	return gameState.cusors >= 50;
+	return GBySH("cursor").count >= 50;
 }
 
 bool canUnLockMossy(std::vector<str>& args) {
-	return gameState.moss >= 1;
+	return GBySH("moss").count >= 1;
 }
 
 bool canUnLockMossGardens(std::vector<str>& args) {
-	return gameState.moss >= 50;
+	return GBySH("moss").count >= 50;
 }
 
 bool canUnLockFABrication(std::vector<str>& args) {
-	return gameState.smallFABs >= 1;
+	return GBySH("smallfab").count >= 1;
 }
 
 bool canUnLockDatamining(std::vector<str>& args) {
-	return gameState.mediumFABs >= 1;
+	return GBySH("mediumfab").count >= 1;
 }
 
 bool canUnLockThatsBig(std::vector<str>& args) {
-	return gameState.largeFABs >= 1;
+	return GBySH("largefab").count >= 1;
 }
 
 bool canUnLockFinal(std::vector<str>& args) {
@@ -771,19 +817,13 @@ void saveGame(str fname) {
 
 	json_dump_number(saveData["totalTransistors"], gameState.totalTransistors);
 
-	json& buildings = saveData["buildings"];
+	json& buildingsJson = saveData["buildings"];
 
-	json& cursor = buildings["cursor"];
-	json& moss = buildings["moss"];
-	json& smallFAB = buildings["smallFAB"];
-	json& mediumFAB = buildings["mediumFAB"];
-	json& largeFAB = buildings["largeFAB"];
-	
-	cursor["count"] = gameState.cusors.get_str();
-	moss["count"] = gameState.moss.get_str();
-	smallFAB["count"] = gameState.smallFABs.get_str();
-	mediumFAB["count"] = gameState.mediumFABs.get_str();
-	largeFAB["count"] = gameState.largeFABs.get_str();
+	for(Building& building : buildings) {
+		json& buildingJson = buildingJson[building.shortand];
+		buildingJson["count"] = building.count.get_str();
+		buildingJson["unlocked"] = building.unlocked;
+	}
 
 	json& upgradesJson = saveData["upgrades"];
 
@@ -813,19 +853,14 @@ void loadGame(str fname) {
 	gameState.transistorBalance = json_read_number(saveData["transistorBalance"]);
 	gameState.totalTransistors = json_read_number(saveData["totalTransistors"]);
 
-	json& buildings = saveData["buildings"];
+	json& buildingsJson = saveData["buildings"];
 
-	json& cursor = buildings["cursor"];
-	json& moss = buildings["moss"];
-	json& smallFAB = buildings["smallFAB"];
-	json& mediumFAB = buildings["mediumFAB"];
-	json& largeFAB = buildings["largeFAB"];
-
-	gameState.cusors = json_read_integer_safe(cursor["count"]);
-	gameState.moss = json_read_integer_safe(moss["count"]);
-	gameState.smallFABs = json_read_integer_safe(smallFAB["count"]);
-	gameState.mediumFABs = json_read_integer_safe(mediumFAB["count"]);
-	gameState.largeFABs = json_read_integer_safe(largeFAB["count"]);
+	for(Building& building : buildings) {
+		json& buildingJson = buildingJson[building.shortand];
+		building.count = json_read_integer_safe(buildingJson["count"]);
+		building.priceCache = expandPrice(building.basePrice, building.count);
+		building.unlocked = json_bool_nullcheck(buildingJson["unlocked"]);
+	}
 
 	json& upgradesJson = saveData["upgrades"];
 
@@ -875,14 +910,6 @@ void balance(std::vector<str>& args) {
 	
 	if(args.size() >= 2) {
 		if(args[0] == "building") {
-			integer count;
-			number yeild;
-			number producing;
-			number TPS = calcTPS();
-			number basePrice;
-			str buildingName = args[1];
-			bool unlocked;
-
 			args[1] = tolower(args[1]);
 
 			if(args[1] == "i860" || args[1] == "startup" || args[1] == "oaktree") {
@@ -890,63 +917,31 @@ void balance(std::vector<str>& args) {
 				return;
 			}
 
-			switch(hash(args[1])) {
-				case cursor:
-					buildingName = "cursor";
-				    count = gameState.cusors;
-				    yeild = calcCursorYeild();
-					basePrice = cursorPrice;
-					unlocked = gameState.cursorUnlocked;
-				    break;
-				case moss:
-				    buildingName = "moss";
-				    count = gameState.moss;
-				    yeild = calcMossYeild();
-					basePrice = mossPrice;
-					unlocked = gameState.mossUnlocked;
-				    break;
-				case smallFAB:
-				    buildingName = "small FAB";
-				    count = gameState.smallFABs;
-				    yeild = calcSmallFABYeild();
-					basePrice = smallFABPrice;
-					unlocked = gameState.smallFABUnlocked;
-				    break;
-				case mediumFAB:
-				    buildingName = "medium FAB";
-				    count = gameState.mediumFABs;
-				    yeild = calcMediumFABYeild();
-					basePrice = mediumFABPrice;
-					unlocked = gameState.mediumFABUnlocked;
-				    break;
-				case largeFAB:
-				    buildingName = "large FAB";
-				    count = gameState.largeFABs;
-				    yeild = calcLargeFABYeild();
-					basePrice = largeFABPrice;
-					unlocked = gameState.largeFABUnlocked;
-				    break;
-				default:
-					unlocked = false;
-				    break;
-			}
-
-			if(!unlocked) {
+			if(buildingIndex.find(args[1]) == buildingIndex.end()) {
 				std::cout << BOLDRED << "Unknown building!\n";
 				return;
 			}
-			if(count > 0) {
-			producing = yeild * count;
-				
-		    number percent = producing / TPS * 100;
 
-			std::cout << BOLDBLUE << "You have " << numString(count, buildingName) <<", each producing " << TransitorsString(yeild, 1) << " per second.\n";
+			Building& building = buildings[getBuildingByShorthand(args[0])];
+
+			if(!building.unlocked) {
+				std::cout << BOLDRED << "Unknown building!\n";
+				return;
+			}
+			if(building.count > 0) {
+			number indivudualYield = building.calcYield();
+
+			number producing = indivudualYield * building.count;
+				
+		    number percent = producing / tPSCache * 100;
+
+			std::cout << BOLDBLUE << "You have " << numString(building.count, building.name) <<", each producing " << TransitorsString(indivudualYield, 1) << " per second.\n";
 			std::cout << "which produces " << TransitorsString(producing, 1) << " per second in total which accounts for " << BOLDGREEN << GRP::toString(percent, 2) << "%" << BOLDBLUE << " of your total TPS.\n";
-			std::cout << "One " << buildingName << " would cost " << TransitorsString(expandPrice(basePrice, count)) << ".\n";
+			std::cout << "One " << building.name << " would cost " << TransitorsString(expandPrice(building.basePrice, building.count)) << ".\n";
 			return;
 			} else {
-				std::cout << BOLDBLUE << "You have no " << buildingName << "s.\n";
-				std::cout << "One " << buildingName << " would cost " << TransitorsString(expandPrice(basePrice, count)) << ".\n";
+				std::cout << BOLDBLUE << "You have no " << building.name << "s.\n";
+				std::cout << "One " << building.name << " would cost " << building.basePrice << ".\n";
 				return;
 			}
 		}
@@ -998,62 +993,28 @@ void buy(std::vector<str>& args)     {
 		}
 	}
 	
-	if(args.size() < 1) {
+	if(args.size() <= 0) {
 		std::cout << BOLDRED << "You must specify somthing to buy!\n";
 		return;
 	}
-	str building = tolower(args[0]);
+	str buildingSH = tolower(args[0]);
 
-	if(building == "i860" || building == "startup" || building == "oaktree") {
+	if(buildingSH == "i860" || buildingSH == "startup" || buildingSH == "oaktree") {
 		std::cout << "coming soon!\n";
+		return;
 	}
 
-	str buildingName;
-	number basePrice;
-	integer* countPtr = nullptr;
-	bool buildingUnlocked = false;
-
-	switch(hash(building)) {
-		case cursor:
-		    buildingName = "cursor";
-		    basePrice = cursorPrice;
-			countPtr = &gameState.cusors;
-			buildingUnlocked = gameState.cursorUnlocked;
-		    break;
-		case moss:
-		    buildingName = "moss";
-		    basePrice = mossPrice;
-		    countPtr = &gameState.moss;
-			buildingUnlocked = gameState.mossUnlocked;
-		    break;
-		case smallFAB:
-		    buildingName = "small FAB";
-		    basePrice = smallFABPrice;
-		    countPtr = &gameState.smallFABs;
-			buildingUnlocked = gameState.smallFABUnlocked;
-		    break;
-		case mediumFAB:
-		    buildingName = "medium FAB";
-		    basePrice = mediumFABPrice;
-		    countPtr = &gameState.mediumFABs;
-			buildingUnlocked = gameState.mediumFABUnlocked;
-		    break;
-		case largeFAB:
-		    buildingName = "large FAB";
-		    basePrice = largeFABPrice;
-		    countPtr = &gameState.largeFABs;
-			buildingUnlocked = gameState.largeFABUnlocked;
-		    break;
-		default:
-		    buildingUnlocked = false;
-			break;
+	if(buildingIndex.find(buildingSH) == buildingIndex.end()) {
+		std::cout << "Unknown building!\n";
+		return;
 	}
 
-	if(!buildingUnlocked) {
+	Building& building = buildings[getBuildingByShorthand(buildingSH)];
+
+	if(!building.unlocked) {
 		std::cout << BOLDRED << "Unknown building!\n";
 		return;
 	}
-	integer& count = *countPtr;
 
 	if(args.size() >= 2) {
 		if(args[1] == "max") {
@@ -1062,50 +1023,58 @@ void buy(std::vector<str>& args)     {
 
 			while(gameState.transistorBalance >= finalPrice) {
 				totalBought++;
-				finalPrice += expandPrice(basePrice, count + totalBought);
+				building.priceCache *= expantionFactor;
+				finalPrice += building.priceCache;
 			}
 
 			totalBought--;
-			finalPrice -= expandPrice(basePrice, count + totalBought);
+			finalPrice -= building.priceCache;
 
-			count += totalBought;
+			building.priceCache = building.priceCache / expantionFactor;
+
+			building.count += totalBought;
 			gameState.transistorBalance -= finalPrice;
 
-			if(count <= 0) {
-				std::cout << BOLDRED << "You can't afford a " << buildingName << "!\n";
+			if(totalBought <= 0) {
+				std::cout << BOLDRED << "You can't afford a " << building.name << "!\n";
 				return;
 			}
 
-			std::cout << BOLDBLUE << "You bought " << numString(totalBought, buildingName) << " for " << TransitorsString(finalPrice) << "!\n";
-
+			std::cout << BOLDBLUE << "You bought " << numString(totalBought, building.name) << " for " << TransitorsString(finalPrice) << "!\n";
 			return;
 		}
 		
 		integer toPurchase(args[1]);
 		number totalPrice = 0;
 
+		number priceCache = building.priceCache;
+
 		for(integer i = 0; i < toPurchase; i++) {
-			totalPrice += expandPrice(basePrice, i+count);
+			totalPrice += priceCache;
+			priceCache *= expantionFactor;
 		}
 
 		if(gameState.transistorBalance >= totalPrice) {
 			gameState.transistorBalance -= totalPrice;
-			count += toPurchase;
+			building.count += toPurchase;
+			building.priceCache = priceCache;
 
-			std::cout << BOLDBLUE << "bought " << numString(toPurchase, buildingName) << " for " << TransitorsString(totalPrice) << "!\n";
+			std::cout << BOLDBLUE << "bought " << numString(toPurchase, building.name) << " for " << TransitorsString(totalPrice) << "!\n";
 		} else {
 			std::cout << BOLDRED << "You don't have enough transistors to buy " << toPurchase << " for " << TransitorsString(totalPrice, 0, BOLDRED, BOLDRED) << "!\n";
 		}
 	} else {
-		if(gameState.transistorBalance >= expandPrice(basePrice, count)) {
-			gameState.transistorBalance -= expandPrice(basePrice, count);
-			count++;
+		number boughtFor = building.priceCache;
+		if(gameState.transistorBalance >= building.priceCache) {
+			gameState.transistorBalance -= building.priceCache;
+			building.count++;
+			building.priceCache *= expantionFactor;
 		} else {
-			std::cout << BOLDRED << "You don't have enough transistors to buy a " << buildingName << "!\n";
+			std::cout << BOLDRED << "You don't have enough transistors to buy a " << building.name << "!\n";
 			return;
 		}
 
-		std::cout << BOLDBLUE << "bought a " << buildingName << " for " << TransitorsString(expandPrice(basePrice, count - 1)) << "!\n";
+		std::cout << BOLDBLUE << "bought a " << building.name << " for " << TransitorsString(boughtFor) << "!\n";
 	}
 }
 
@@ -1126,50 +1095,38 @@ void info(std::vector<str>& args)    {
 			std::cout << BOLDWHITE << "\"Moorgans law: the ammount of transistors in existance will double every hour\"\n";
 		}
 	} else if(args.size() > 1) {
-		if(args[0] == "building") {
+			   if(args[0] == "building") {
 			args[1] = tolower(args[1]);
 			if(args[1] == "i860" || args[1] == "startup" || args[1] == "oaktree") {
 				std::cout << "coming soon!\n";
 				return;
 			}
 
+			if(buildingIndex.find(args[1]) == buildingIndex.end()) {
+				std::cout << BOLDRED << "Unknown building!";
+				return;
+			}
+
+			Building& building = buildings[getBuildingByShorthand(args[1])];
+
+			if(!building.unlocked) {
+				std::cout << BOLDRED << "Unknown building!";
+			}
+
 			if(args[1] == "cursor") {
-				std::cout << BOLDWHITE << "CURSOR\n";
-				std::cout << BOLDCYAN << "Description:\n";
-				std::cout << RESET << "Autoclicks once every 10 seconds\n";
-				std::cout << BOLDCYAN << "Effect:\n";
-				std::cout << RESET << "Makes " << TransitorsString(calcCursorYeild() * 10, 0, "", "") << " every ten seconds\n\n";
-				std::cout << BOLDWHITE << "\"A nice cusor for your nice mouse\"\n";
-			} else if(args[1] == "moss") {
-				std::cout << BOLDWHITE << "MOSS\n";
-				std::cout << BOLDCYAN << "Description:\n";
-				std::cout << RESET << "Some moss to... somthing more transistors\n";
-				std::cout << BOLDCYAN << "Effect:\n";
-				std::cout << RESET << "Makes " << TransitorsString(calcMossYeild(), 0, "", "") << " every second\n\n";
-				std::cout << BOLDWHITE << "\"Some nice moss to uh..... cookies\"\n";
-			} else if(args[1] == "smallfab") {
-				std::cout << BOLDWHITE << "SMALL FAB\n";
-				std::cout << BOLDCYAN << "Description:\n";
-				std::cout << RESET << "Small FABs make microchips which contain transistors\n";
-				std::cout << BOLDCYAN << "Effect:\n";
-				std::cout << RESET << "Makes " << TransitorsString(calcSmallFABYeild(), 0, "", "") << " every second\n\n";
-				std::cout << BOLDWHITE << "\"Self-containing!\"\n";
-			} else if(args[1] == "mediumfab") {
-				std::cout << BOLDWHITE << "MEDIUM FAB\n";
-				std::cout << BOLDCYAN << "Description:\n";
-				std::cout << RESET << "A faster fab to make more transistors\n";
-				std::cout << BOLDCYAN << "Effect:\n";
-				std::cout << RESET << "Makes " << TransitorsString(calcMediumFABYeild(), 0, "", "") << " every second\n\n";
-				std::cout << BOLDWHITE << "\"This is AVERAGE!?! MORE PRODUCTION!\"\n";
-			} else if(args[1] == "largefab") {
-				std::cout << BOLDWHITE << "LARGE FAB\n";
-				std::cout << BOLDCYAN << "Description:\n";
-				std::cout << RESET << "A yet larger FAB to make transistors at an even faster rate\n";
-				std::cout << BOLDCYAN << "Effect:\n";
-				std::cout << RESET << "Makes " << TransitorsString(calcLargeFABYeild(), 0, "", "") << " every second\n\n";
-				std::cout << BOLDWHITE << "\"???\"\n";
+				std::cout << BOLDWHITE << toupper(building.name) << '\n';
+				std::cout << BOLDCYAN  << "Description:\n";
+				std::cout << RESET     << building.description << '\n';
+				std::cout << BOLDCYAN  << "Effect:\n";
+				std::cout << RESET     << "Makes " << TransitorsString(building.calcYield() * 10) << RESET << " every ten seconds\n\n";
+				std::cout << BOLDWHITE << '"' << building.flavorText << "\"\n";
 			} else {
-				std::cout << BOLDRED << "Unknown building!\n";
+				std::cout << BOLDWHITE << toupper(building.name) << '\n';
+				std::cout << BOLDCYAN  << "Description:\n";
+				std::cout << RESET     << building.description << '\n';
+				std::cout << BOLDCYAN  << "Effect:\n";
+				std::cout << RESET     << "Makes " << TransitorsString(building.calcYield()) << RESET << " every second\n\n";
+				std::cout << BOLDWHITE << '"' << building.flavorText << "\"\n";
 			}
 		} else if(args[0] == "upgrade") {
 			str Uname = "";
@@ -1411,29 +1368,11 @@ void list(std::vector<str>& args)    {
 		} else if(args[0] == "building" || args[0] == "buildings") {
 			std::cout << BOLDWHITE << "Buildings:\n\n";
 
-			if(gameState.cursorUnlocked) {
-				std::cout << BOLDBLUE << "Cursor - " << "Autoclicks once every 10 seconds\n";
-				std::cout << "one will cost " << TransitorsString(expandPrice(cursorPrice, gameState.cusors)) << "!\n\n";
-			}
-
-			if(gameState.mossUnlocked) {
-				std::cout << BOLDBLUE << "Moss - " << "Some moss to... somthing more transistors\n";
-				std::cout << "one will cost " << TransitorsString(expandPrice(mossPrice, gameState.moss)) << "!\n\n";
-			}
-
-			if(gameState.smallFABUnlocked) {
-				std::cout << BOLDBLUE << "Small FAB - " << "Small FABs make microchips which contain transistors\n";
-				std::cout << "one will cost " << TransitorsString(expandPrice(smallFABPrice, gameState.smallFABs)) << "!\n\n";
-			}
-
-			if(gameState.mediumFABUnlocked) {
-				std::cout << BOLDBLUE << "Medium FAB - " << "A faster fab to make more transistors\n";
-				std::cout << "one will cost " << TransitorsString(expandPrice(mediumFABPrice, gameState.mediumFABs)) << "!\n\n";
-			}
-
-			if(gameState.largeFABUnlocked) {
-				std::cout << BOLDBLUE << "Large FAB - " << "A yet larger FAB to make transistors at an even faster rate\n";
-				std::cout << "one will cost " << TransitorsString(expandPrice(largeFABPrice, gameState.mediumFABs)) << "!\n\n";
+			for(Building& building : buildings) {
+				if(building.unlocked) {
+					std::cout << BOLDBLUE << building.name << " - " << building.description << '\n';
+					std::cout << "One will cost " << TransitorsString(building.priceCache) << "!\n\n";
+				}
 			}
 		}
 	}
@@ -1482,6 +1421,12 @@ int main() {
 	bool exited = false;
 
 	bool skipped = false;
+
+	createBuilding("Cursor", "Autoclicks once every 10 seconds", "A nice cusor for your nice mouse", 15, {isCursorUnLocked, unlockCursor}, calcCursorYeild, "cursor");
+	createBuilding("Moss", "Some moss to... somthing more transistors", "Some nice moss to uh..... cookies", 100, {isMossUnLocked, unlockMoss}, calcMossYeild, "moss");
+	createBuilding("Small FAB", "Small FABs make microchips which contain transistors", "Self-containing!", 1'000, {isSmallFABUnLocked, unlockSmallFAB}, calcSmallFABYeild, "smallfab");
+	createBuilding("Medium FAB", "A bigger FAB to make more transistors", "This is AVERAGE!?! MORE PRODUCTION!", 11'000, {isMediumFABUnLocked, unlockMediumFAB}, calcMediumFABYeild, "mediumfab");
+	createBuilding("Large FAB", "A yet larger FAB to make transistors at an even faster rate", "???", 120'000, {isLargeFABUnLocked, unlockLargeFAB}, calcLargeFABYeild, "largefab");
 
 	createUpgrade("integrated mouse", "The mouse now integrates semiconductor technology into it's design", "doubles mouse and cursor output.", "Now with semiconductor technology!", 100, cursorUpgrades, {canUnLockIntegratedMouse, unLockIntegratedMouse});
 	createUpgrade("faster fingers", "Makes fingers faster", "doubles mouse and cursor output.", "Buy our finger speed pills today, double finger speed garauntee!", 500, cursorUpgrades, {canUnLockFastFing, unLockFastFing});
@@ -1552,7 +1497,7 @@ int main() {
 		getline(std::cin, action);
 
 			   if(action == "n") {
-			gameState = {0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false};
+			gameState = {0, 0, 0, 0, 0, 0, 0, 0};
 
 naming:
 			std::cout << "\nGame name: ";
@@ -1822,12 +1767,7 @@ select:
 
 		addUpgradeTriggers();
 		addAchievementTriggers();
-
-		addTrigger({isCursorUnLocked, unlockCursor});
-		addTrigger({isMossUnLocked, unlockMoss});
-		addTrigger({isSmallFABUnLocked, unlockSmallFAB});
-		addTrigger({isMediumFABUnLocked, unlockMediumFAB});
-		addTrigger({isLargeFABUnLocked, unlockLargeFAB});
+		addBuildingTriggers();
 
 		CMD::log("Program iniitialized");
 
