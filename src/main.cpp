@@ -188,8 +188,6 @@ TclickerState gameState = {0, 0, 0, 0, 0, 0, 0, 0};
 
 const str name = "Transistor Clicker";
 const str version = "0.0.3 DevBuild 1";
-
-const number cursorPrice = 15, mossPrice = 100, smallFABPrice = 1'000, mediumFABPrice = 11'000, largeFABPrice = 120'000, intelI860Price = 1'305'078, startupPrice = 17'000'000, oakTreePrice = 200'000'000;
 const number cursorYeild = number(1, 10), mossYeild = 1, smallFABYeild = 10, mediumFABYeild = 60, largeFABYeild = 260, intelI860Yeild = 1'700, startupYeild = 10'000, oakTreeYeild = 120'000;
 const number expantionFactor = number(23, 20);
 number tPSCache = 0;
@@ -510,23 +508,23 @@ void duZNutin(std::vector<str>& args) {
 #pragma region for buildings
 
 bool isCursorUnLocked(std::vector<str>& args) {
-	return gameState.totalTransistors > cursorPrice;
+	return gameState.totalTransistors > GBySH("cursor").basePrice;
 }
 
 bool isMossUnLocked(std::vector<str>& args) {
-	return gameState.totalTransistors > mossPrice;
+	return gameState.totalTransistors > GBySH("moss").basePrice;
 }
 
 bool isSmallFABUnLocked(std::vector<str>& args) {
-	return gameState.totalTransistors > smallFABPrice;
+	return gameState.totalTransistors > GBySH("smallfab").basePrice;
 }
 
 bool isMediumFABUnLocked(std::vector<str>& args) {
-	return gameState.totalTransistors > mediumFABPrice;
+	return gameState.totalTransistors > GBySH("mediumfab").basePrice;
 }
 
 bool isLargeFABUnLocked(std::vector<str>& args) {
-	return gameState.totalTransistors > largeFABPrice;
+	return gameState.totalTransistors > GBySH("largefab").basePrice;
 }
 
 void unlockCursor(std::vector<str>& args) {
@@ -776,12 +774,12 @@ void unLockFinal(std::vector<str>& args) {
 
 #pragma region saves
 
-integer json_read_integer_safe(json::value_type j, integer def = 0) {
-	if(j.is_null()) {
+integer json_read_integer_safe(json& j, str location, integer def = 0) {
+	if(!j[location].is_string()) {
 		return def;
 	}
 
-	return integer((str)j);
+	return integer((str)j[location]);
 }
 
 bool json_bool_nullcheck(json::value_type j, bool def = false) {
@@ -820,12 +818,13 @@ void saveGame(str fname) {
 	json& buildingsJson = saveData["buildings"];
 
 	for(Building& building : buildings) {
-		json& buildingJson = buildingJson[building.shortand];
-		buildingJson["count"] = building.count.get_str();
+		json& buildingJson = buildingsJson[building.shortand];
 		buildingJson["unlocked"] = building.unlocked;
+		buildingJson["count"] = building.count.get_str();
 	}
 
 	json& upgradesJson = saveData["upgrades"];
+
 
 	for(Upgrade& upgrade : upgrades) {
 		json& upgradeJson = upgradesJson[upgrade.name];
@@ -856,10 +855,10 @@ void loadGame(str fname) {
 	json& buildingsJson = saveData["buildings"];
 
 	for(Building& building : buildings) {
-		json& buildingJson = buildingJson[building.shortand];
-		building.count = json_read_integer_safe(buildingJson["count"]);
-		building.priceCache = expandPrice(building.basePrice, building.count);
+		json& buildingJson = buildingsJson[building.shortand];
 		building.unlocked = json_bool_nullcheck(buildingJson["unlocked"]);
+		building.count = json_read_integer_safe(buildingJson, "count");
+		building.priceCache = expandPrice(building.basePrice, building.count);
 	}
 
 	json& upgradesJson = saveData["upgrades"];
